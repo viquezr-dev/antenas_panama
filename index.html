@@ -250,10 +250,10 @@
         legend.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'legend');
             div.innerHTML = `
-                <h4>Altura de Estructura</h4>
-                <p><i style="background: #a7f3d0"></i> Menor de 50 m</p>
-                <p><i style="background: #fde68a"></i> 50 m — 100 m</p>
-                <p><i style="background: #fca5a5"></i> Mayor de 100 m</p>
+                <h4>Altura y Cobertura</h4>
+                <p><i style="background: #a7f3d0"></i> Menor de 50 m (Radio: 3km)</p>
+                <p><i style="background: #fde68a"></i> 50 m — 100 m (Radio: 5km)</p>
+                <p><i style="background: #fca5a5"></i> Mayor de 100 m (Radio: 8km)</p>
             `;
             return div;
         };
