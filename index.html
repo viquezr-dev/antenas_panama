@@ -211,40 +211,16 @@
         // Capa base de OpenStreetMap tradicional con opacidad ajustada para un estilo más suave
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            opacity: 0.75 // Suaviza los colores vibrantes de OSM para que mantenga el look pastel
+            opacity: 0.75
         }).addTo(map);
 
         // Variables de estado
         let torresData = [];
         let mostrarBufferActivo = false;
 
-        // Capas del mapa con lógica de colores pastel por altura/estructura
+        // Capas contenedoras dinámicas del mapa
         const markersLayer = L.layerGroup().addTo(map);
         const bufferLayer = L.layerGroup().addTo(map);
-
-        let geojsonLayer = L.geoJSON(null, {
-            pointToLayer: function (feature, latlng) {
-                const props = feature.properties;
-                const altura = props['Altura (m)'] || 0;
-                
-                // Paleta de colores Pastel según la altura de la estructura
-                let iconColor = '#a7f3d0'; // Verde menta suave (Estructuras bajas / <50m)
-                if (altura > 50) iconColor = '#fde68a';  // Amarillo/Naranja pastel (Media / 50m - 100m)
-                if (altura > 100) iconColor = '#fca5a5'; // Rojo/Rosa pastel suave (Alta / >100m)
-                
-                return L.circleMarker(latlng, {
-                    radius: 7,
-                    fillColor: iconColor,
-                    color: '#475569', // Borde gris azulado para que resalte sobre OpenStreetMap
-                    weight: 1.5,
-                    opacity: 0.9,
-                    fillOpacity: 1
-                });
-            },
-            onEachFeature: function (feature, layer) {
-                layer.bindPopup(crearPopup(feature.properties));
-            }
-        });
 
         // Nodos del DOM
         const selectProv = document.getElementById('provincia');
@@ -270,11 +246,9 @@
 
         // Lógica de cascada indexada
         function inicializarFiltrosCascada() {
-            // Extraer provincias únicas
             const provincias = [...new Set(torresData.map(f => f.properties.PROV_NOMB).filter(Boolean))].sort();
             provincias.forEach(p => selectProv.add(new Option(p, p)));
 
-            // Evento Provincia -> Carga Distritos
             selectProv.addEventListener('change', () => {
                 const provSel = selectProv.value;
                 selectDist.innerHTML = '<option value="TODOS">Todos</option>';
@@ -294,7 +268,6 @@
                 filtrarYRenderizar();
             });
 
-            // Evento Distrito -> Carga Corregimientos
             selectDist.addEventListener('change', () => {
                 const provSel = selectProv.value;
                 const distSel = selectDist.value;
@@ -325,7 +298,6 @@
             const dSel = selectDist.value;
             const cSel = selectCorr.value;
 
-            // Aplicar filtros acumulativos
             let filtrados = torresData.filter(f => {
                 if (pSel !== 'TODAS' && f.properties.PROV_NOMB !== pSel) return false;
                 if (dSel !== 'TODOS' && f.properties.DIST_NOMB !== dSel) return false;
@@ -333,9 +305,7 @@
                 return true;
             });
 
-            // Dibujar elementos en pantalla
             filtrados.forEach(feature => {
-                // Leer coordenadas estándar o desde atributos planos
                 let lat, lon;
                 if (feature.geometry && feature.geometry.coordinates) {
                     lon = feature.geometry.coordinates[0];
@@ -347,29 +317,33 @@
 
                 if (!lat || !lon || isNaN(lat) || isNaN(lon)) return;
 
-                // Estilo Pastel para los Marcadores Circulares (en vez de DivIcons chillones)
+                // --- NUEVA LÓGICA DE COLORIZACIÓN PASTEL INTEGRADA ---
+                const altura = feature.properties['Altura (m)'] || 0;
+                let iconColor = '#a7f3d0'; // Verde menta (<50m)
+                if (altura > 50) iconColor = '#fde68a';  // Amarillo pastel (50m - 100m)
+                if (altura > 100) iconColor = '#fca5a5'; // Rojo coral pastel (>100m)
+
                 const markerOptions = {
-                    radius: 6,
-                    fillColor: '#64748b', // Gris azulado pastel neutro
-                    color: '#fff',
+                    radius: 7,
+                    fillColor: iconColor,
+                    color: '#475569', // Borde gris contrastante para OpenStreetMap
                     weight: 1.5,
-                    opacity: 1,
-                    fillOpacity: 0.9
+                    opacity: 0.9,
+                    fillOpacity: 1
                 };
 
                 const marker = L.circleMarker([lat, lon], markerOptions)
                     .bindPopup(crearPopup(feature.properties));
                 markersLayer.addLayer(marker);
 
-                // Si la cobertura está encendida, agregar el buffer de 5km (5000 metros)
                 if (mostrarBufferActivo) {
                     const buffer = L.circle([lat, lon], {
                         radius: 5000, 
-                        color: '#3b82f6',      // Azul pastel suave
+                        color: '#3b82f6',      
                         weight: 1,
-                        fillColor: '#93c5fd',  // Relleno celeste pastel muy suave
+                        fillColor: '#93c5fd',  
                         fillOpacity: 0.22,
-                        interactive: false     // No interfiere con el clic del marcador
+                        interactive: false     
                     });
                     bufferLayer.addLayer(buffer);
                 }
@@ -377,14 +351,12 @@
 
             document.getElementById('contador').textContent = `${filtrados.length} torres encontradas`;
 
-            // Auto-encuadre dinámico de la cámara del mapa
             if (filtrados.length > 0 && (pSel !== 'TODAS' || dSel !== 'TODOS')) {
                 const tempGroup = L.featureGroup([...markersLayer.getLayers(), ...bufferLayer.getLayers()]);
                 map.fitBounds(tempGroup.getBounds(), { padding: [40, 40], maxZoom: 14 });
             }
         }
 
-        // Alternar el estado del Buffer
         function toggleBuffer() {
             mostrarBufferActivo = !mostrarBufferActivo;
             if (mostrarBufferActivo) {
@@ -425,15 +397,14 @@
             map.setView([8.537, -80.782], 8);
         }
 
-        // Set de datos controlado estructurado para pruebas en cascada
         function cargarDatosEjemplo() {
             const mock = {
                 "type": "FeatureCollection",
                 "features": [
                     { "type": "Feature", "properties": { "Operador": "Más Móvil", "Sitio Tran": "Torre Calle 50", "Estructura": "Monopolo", "Altura (m)": 45, "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5193, 8.9823] } },
-                    { "type": "Feature", "properties": { "Operador": "Tigo", "Sitio Tran": "Antena Vía España", "Estructura": "Autosoportada", "Altura (m)": 60, "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "Bella Vista" }, "geometry": { "type": "Point", "coordinates": [-79.5270, 8.9870] } },
+                    { "type": "Feature", "properties": { "Operador": "Tigo", "Sitio Tran": "Antena Vía España", "Estructura": "Autosoportada", "Altura (m)": 65, "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "Bella Vista" }, "geometry": { "type": "Point", "coordinates": [-79.5270, 8.9870] } },
                     { "type": "Feature", "properties": { "Operador": "Digicel", "Sitio Tran": "Torre Pacora Centro", "Estructura": "Arriostrada", "Altura (m)": 35, "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "Pacora" }, "geometry": { "type": "Point", "coordinates": [-79.2800, 9.0800] } },
-                    { "type": "Feature", "properties": { "Operador": "Más Móvil", "Sitio Tran": "Estación La Chorrera", "Estructura": "Monopolo", "Altura (m)": 40, "PROV_NOMB": "Panamá Oeste", "DIST_NOMB": "La Chorrera", "CORR_NOMB": "Barrio Balboa" }, "geometry": { "type": "Point", "coordinates": [-79.7860, 8.8780] } },
+                    { "type": "Feature", "properties": { "Operador": "Más Móvil", "Sitio Tran": "Estación La Chorrera", "Estructura": "Monopolo", "Altura (m)": 120, "PROV_NOMB": "Panamá Oeste", "DIST_NOMB": "La Chorrera", "CORR_NOMB": "Barrio Balboa" }, "geometry": { "type": "Point", "coordinates": [-79.7860, 8.8780] } },
                     { "type": "Feature", "properties": { "Operador": "Tigo", "Sitio Tran": "Torre David Central", "Estructura": "Autosoportada", "Altura (m)": 75, "PROV_NOMB": "Chiriquí", "DIST_NOMB": "David", "CORR_NOMB": "David" }, "geometry": { "type": "Point", "coordinates": [-82.4305, 8.4373] } }
                 ]
             };
