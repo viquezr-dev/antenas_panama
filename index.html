@@ -208,11 +208,10 @@
             zoom: 8
         });
 
-        // Capa base CartoDB Positron (Ideal para entornos pasteles y profesionales)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20
+        // Capa base de OpenStreetMap tradicional con opacidad ajustada para un estilo más suave
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            opacity: 0.75 // Suaviza los colores vibrantes de OSM para que mantenga el look pastel
         }).addTo(map);
 
         // Variables de estado
