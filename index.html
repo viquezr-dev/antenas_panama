@@ -218,9 +218,33 @@
         let torresData = [];
         let mostrarBufferActivo = false;
 
-        // Capas del mapa
+        // Capas del mapa con lógica de colores pastel por altura/estructura
         const markersLayer = L.layerGroup().addTo(map);
         const bufferLayer = L.layerGroup().addTo(map);
+
+        let geojsonLayer = L.geoJSON(null, {
+            pointToLayer: function (feature, latlng) {
+                const props = feature.properties;
+                const altura = props['Altura (m)'] || 0;
+                
+                // Paleta de colores Pastel según la altura de la estructura
+                let iconColor = '#a7f3d0'; // Verde menta suave (Estructuras bajas / <50m)
+                if (altura > 50) iconColor = '#fde68a';  // Amarillo/Naranja pastel (Media / 50m - 100m)
+                if (altura > 100) iconColor = '#fca5a5'; // Rojo/Rosa pastel suave (Alta / >100m)
+                
+                return L.circleMarker(latlng, {
+                    radius: 7,
+                    fillColor: iconColor,
+                    color: '#475569', // Borde gris azulado para que resalte sobre OpenStreetMap
+                    weight: 1.5,
+                    opacity: 0.9,
+                    fillOpacity: 1
+                });
+            },
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup(crearPopup(feature.properties));
+            }
+        });
 
         // Nodos del DOM
         const selectProv = document.getElementById('provincia');
