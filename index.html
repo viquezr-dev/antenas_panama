@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TORRES Y ANTENAS DE PANAMÁ</title>
     
-    <!-- Estilos de Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
@@ -19,6 +18,7 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f0f2f5;
+            padding-bottom: 40px; /* Evita que el footer tape contenido */
         }
         
         #map {
@@ -120,6 +120,7 @@
             bottom: 0;
             width: 100%;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+            z-index: 1000;
         }
         
         .footer span {
@@ -128,16 +129,19 @@
         }
         
         .stats {
-            background: rgba(255,255,255,0.9);
+            background: #f0f2f5;
             padding: 8px 15px;
             border-radius: 20px;
             font-size: 14px;
             color: #1a237e;
+            font-weight: bold;
+            border: 1px solid #1a237e;
         }
         
         .info-popup {
             font-size: 14px;
             line-height: 1.6;
+            min-width: 220px;
         }
         
         .info-popup strong {
@@ -160,12 +164,13 @@
             }
             
             #map {
-                height: calc(100vh - 200px);
+                height: calc(100vh - 220px);
             }
         }
     </style>
 </head>
 <body>
+
     <div class="header">
         <h1>📡 TORRES Y ANTENAS DE PANAMÁ</h1>
     </div>
@@ -201,45 +206,71 @@
 
         // Variables globales
         let torresData = [];
-        let markersLayer = L.layerGroup().addTo(map);
+        let geojsonLayer = L.geoJSON(null, {
+            pointToLayer: function (feature, latlng) {
+                const props = feature.properties;
+                const altura = props['Altura (m)'] || 0;
+                
+                // Definición de colores según la altura de la estructura
+                let iconColor = '#00C853'; // Verde - baja
+                if (altura > 50) iconColor = '#FF6F00';  // Naranja - media
+                if (altura > 100) iconColor = '#D50000'; // Rojo - alta
+                
+                return L.marker(latlng, {
+                    icon: L.divIcon({
+                        className: 'custom-icon',
+                        html: `<div style="background-color: ${iconColor}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px rgba(0,0,0,0.4);"></div>`,
+                        iconSize: [14, 14],
+                        iconAnchor: [7, 7]
+                    })
+                });
+            },
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup(crearPopup(feature.properties));
+            }
+        }).addTo(map);
+
         let provinciasUnicas = new Set();
 
-        // Función para cargar el GeoJSON
+        // Función para cargar el GeoJSON con manejo de errores optimizado
         async function cargarTorres() {
             try {
-                // Reemplaza esta URL con la ubicación de tu archivo torres.geojson
                 const response = await fetch('torres.geojson');
-                
-                if (!response.ok) {
-                    throw new Error('No se pudo cargar el archivo. Asegúrate de que torres.geojson esté en la misma carpeta.');
-                }
+                if (!response.ok) throw new Error('No se encontró el archivo torres.geojson');
                 
                 const data = await response.json();
                 
-                // Verificar que tiene features
                 if (!data.features || data.features.length === 0) {
-                    throw new Error('El archivo no contiene datos válidos.');
+                    throw new Error('El archivo GeoJSON no tiene features válidos.');
                 }
                 
-                torresData = data.features;
+                // Normalizar features por si carecen del objeto 'geometry' nativo de un GeoJSON estándar
+                torresData = data.features.map(f => {
+                    if ((!f.geometry || !f.geometry.coordinates) && f.properties.Lat_Dec && f.properties.Lon_Dec) {
+                        f.geometry = {
+                            type: "Point",
+                            coordinates: [parseFloat(f.properties.Lon_Dec), parseFloat(f.properties.Lat_Dec)]
+                        };
+                    }
+                    return f;
+                }).filter(f => f.geometry && f.geometry.coordinates);
+
                 procesarProvincias();
                 mostrarTorres('TODAS');
-                actualizarContador(torresData.length);
                 
-                console.log(`✅ ${torresData.length} torres cargadas correctamente`);
-                
+                console.log(`✅ ${torresData.length} torres cargadas dinámicamente.`);
             } catch (error) {
-                console.error('Error:', error);
-                alert('❌ Error al cargar los datos:\n' + error.message + '\n\nAsegúrate de que el archivo torres.geojson esté en la misma carpeta que este HTML.');
-                
-                // Datos de ejemplo para demostración
+                console.warn('⚠️ Alerta de carga local o archivo faltante. Cargando datos de respaldo... Detalle:', error.message);
                 cargarDatosEjemplo();
             }
         }
 
-        // Función para procesar provincias únicas
+        // Función para procesar provincias únicas en el menú desplegable
         function procesarProvincias() {
             const select = document.getElementById('provincia');
+            // Limpiar opciones previas excepto la primera
+            select.innerHTML = '<option value="TODAS">🌎 Todas las provincias</option>';
+            provinciasUnicas.clear();
             
             torresData.forEach(feature => {
                 const provincia = feature.properties.PROV_NOMB;
@@ -248,135 +279,90 @@
                 }
             });
             
-            // Ordenar alfabéticamente
             const provinciasOrdenadas = Array.from(provinciasUnicas).sort();
             
-            // Agregar al select
             provinciasOrdenadas.forEach(prov => {
                 const option = document.createElement('option');
                 option.value = prov;
                 option.textContent = prov;
                 select.appendChild(option);
             });
-            
-            // Evento de cambio en el select
-            select.addEventListener('change', function() {
-                const provinciaSeleccionada = this.value;
-                mostrarTorres(provinciaSeleccionada);
-            });
         }
 
-        // Función para mostrar torres según filtro
+        // Detectar cambios en el filtro selector de provincias
+        document.getElementById('provincia').addEventListener('change', function() {
+            mostrarTorres(this.value);
+        });
+
+        // Función para renderizar y aplicar filtros
         function mostrarTorres(provinciaFiltro) {
-            // Limpiar marcadores anteriores
-            markersLayer.clearLayers();
+            geojsonLayer.clearLayers();
             
-            // Filtrar datos
             let torresFiltradas = torresData;
             if (provinciaFiltro !== 'TODAS') {
-                torresFiltradas = torresData.filter(feature => {
-                    return feature.properties.PROV_NOMB === provinciaFiltro;
-                });
+                torresFiltradas = torresData.filter(feature => feature.properties.PROV_NOMB === provinciaFiltro);
             }
             
-            // Crear marcadores con iconos personalizados
-            torresFiltradas.forEach(feature => {
-                const props = feature.properties;
-                const lat = props.Lat_Dec;
-                const lon = props.Lon_Dec;
-                
-                // Verificar coordenadas válidas
-                if (lat && lon && !isNaN(lat) && !isNaN(lon)) {
-                    // Icono personalizado según altura
-                    const altura = props['Altura (m)'] || 0;
-                    let iconColor = '#00C853'; // Verde - baja
-                    if (altura > 50) iconColor = '#FF6F00'; // Naranja - media
-                    if (altura > 100) iconColor = '#D50000'; // Rojo - alta
-                    
-                    const icon = L.divIcon({
-                        className: 'custom-icon',
-                        html: `<div style="background-color: ${iconColor}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>`,
-                        iconSize: [12, 12],
-                        iconAnchor: [6, 6]
-                    });
-                    
-                    const marker = L.marker([lat, lon], { icon: icon })
-                        .addTo(markersLayer)
-                        .bindPopup(crearPopup(props));
-                }
+            geojsonLayer.addData({
+                type: "FeatureCollection",
+                features: torresFiltradas
             });
             
-            // Actualizar contador
             actualizarContador(torresFiltradas.length);
             
-            // Ajustar zoom si hay puntos
             if (torresFiltradas.length > 0) {
-                const bounds = markersLayer.getBounds();
+                const bounds = geojsonLayer.getBounds();
                 if (bounds.isValid()) {
                     map.fitBounds(bounds, { padding: [50, 50] });
                 }
             }
         }
 
-        // Función para crear el popup con información
+        // Función para generar HTML limpio dentro de los popups
         function crearPopup(props) {
-            const altura = props['Altura (m)'] || 'No especificada';
-            const operador = props.Operador || 'No especificado';
-            const sitio = props['Sitio Tran'] || 'No especificado';
-            const estructura = props.Estructura || 'No especificada';
-            const provincia = props.PROV_NOMB || 'No especificada';
-            const distrito = props.DIST_NOMB || 'No especificado';
-            const corregimiento = props.CORR_NOMB || 'No especificado';
-            
             return `
                 <div class="info-popup">
-                    <h3 style="color: #1a237e; margin: 0 0 10px 0;">📡 ${sitio}</h3>
-                    <p><strong>Operador:</strong> ${operador}</p>
-                    <p><strong>Estructura:</strong> ${estructura}</p>
-                    <p><strong>Altura:</strong> ${altura} m</p>
-                    <hr style="border: 1px solid #e0e0e0; margin: 8px 0;">
-                    <p><strong>Provincia:</strong> ${provincia}</p>
-                    <p><strong>Distrito:</strong> ${distrito}</p>
-                    <p><strong>Corregimiento:</strong> ${corregimiento}</p>
+                    <h3 style="color: #1a237e; margin: 0 0 10px 0;">📡 ${props['Sitio Tran'] || 'No especificado'}</h3>
+                    <p><strong>Operador:</strong> ${props.Operador || 'No especificado'}</p>
+                    <p><strong>Estructura:</strong> ${props.Estructura || 'No especificada'}</p>
+                    <p><strong>Altura:</strong> ${props['Altura (m)'] ? props['Altura (m)'] + ' m' : 'No especificada'}</p>
+                    <hr style="border: 0; border-top: 1px solid #e0e0e0; margin: 8px 0;">
+                    <p><strong>Provincia:</strong> ${props.PROV_NOMB || 'No especificada'}</p>
+                    <p><strong>Distrito:</strong> ${props.DIST_NOMB || 'No especificado'}</p>
+                    <p><strong>Corregimiento:</strong> ${props.CORR_NOMB || 'No especificado'}</p>
                 </div>
             `;
         }
 
-        // Función para actualizar contador
         function actualizarContador(cantidad) {
             document.getElementById('contador').textContent = `Total: ${cantidad} torres`;
         }
 
-        // Función para resetear el mapa
         function resetMap() {
             document.getElementById('provincia').value = 'TODAS';
             mostrarTorres('TODAS');
             map.setView([8.537, -80.782], 8);
         }
 
-        // Función para mostrar estadísticas
         function showStats() {
             const total = torresData.length;
+            if(total === 0) return alert("No hay datos para generar estadísticas.");
+
             const provincias = provinciasUnicas.size;
-            
-            // Calcular torres por provincia
             let statsPorProvincia = {};
+            
             torresData.forEach(feature => {
-                const prov = feature.properties.PROV_NOMB;
-                if (prov) {
-                    statsPorProvincia[prov] = (statsPorProvincia[prov] || 0) + 1;
-                }
+                const prov = feature.properties.PROV_NOMB || "No especificada";
+                statsPorProvincia[prov] = (statsPorProvincia[prov] || 0) + 1;
             });
             
-            // Ordenar provincias por cantidad
-            const statsOrdenadas = Object.entries(statsPorProvincia)
-                .sort((a, b) => b[1] - a[1]);
+            const statsOrdenadas = Object.entries(statsPorProvincia).sort((a, b) => b[1] - a[1]);
             
             let mensaje = `📊 ESTADÍSTICAS DE TORRES Y ANTENAS\n`;
             mensaje += `================================\n`;
             mensaje += `Total de torres: ${total}\n`;
-            mensaje += `Provincias: ${provincias}\n`;
-            mensaje += `\n📌 Distribución por provincia:\n`;
+            mensaje += `Provincias registradas: ${provincias}\n\n`;
+            mensaje += `📌 Distribución por provincia:\n`;
             
             statsOrdenadas.forEach(([prov, cantidad]) => {
                 const porcentaje = ((cantidad / total) * 100).toFixed(1);
@@ -386,100 +372,24 @@
             alert(mensaje);
         }
 
-        // DATOS DE EJEMPLO (si no se puede cargar el GeoJSON)
+        // Datos mock/ejemplo estructurados correctamente bajo estándar GeoJSON
         function cargarDatosEjemplo() {
-            console.log('📌 Cargando datos de ejemplo...');
-            
             const ejemploData = {
                 "type": "FeatureCollection",
                 "features": [
-                    {
-                        "type": "Feature",
-                        "properties": {
-                            "Operador": "Cable & Wireless",
-                            "Sitio Tran": "Torre C&W - Panamá",
-                            "Estructura": "Torre autosoportada",
-                            "Altura (m)": 85,
-                            "Lat_Dec": 8.9823,
-                            "Lon_Dec": -79.5193,
-                            "PROV_ID": "1",
-                            "PROV_NOMB": "Panamá",
-                            "DIST_ID": "1",
-                            "DIST_NOMB": "Panamá",
-                            "CORR_ID": "1",
-                            "CORR_NOMB": "San Francisco"
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": {
-                            "Operador": "Claro",
-                            "Sitio Tran": "Antena Claro - Colón",
-                            "Estructura": "Torre monopolo",
-                            "Altura (m)": 45,
-                            "Lat_Dec": 9.3431,
-                            "Lon_Dec": -79.8869,
-                            "PROV_ID": "2",
-                            "PROV_NOMB": "Colón",
-                            "DIST_ID": "2",
-                            "DIST_NOMB": "Colón",
-                            "CORR_ID": "2",
-                            "CORR_NOMB": "Cristóbal"
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": {
-                            "Operador": "Tigo",
-                            "Sitio Tran": "Torre Tigo - Chiriquí",
-                            "Estructura": "Torre autosoportada",
-                            "Altura (m)": 120,
-                            "Lat_Dec": 8.4373,
-                            "Lon_Dec": -82.4305,
-                            "PROV_ID": "3",
-                            "PROV_NOMB": "Chiriquí",
-                            "DIST_ID": "3",
-                            "DIST_NOMB": "David",
-                            "CORR_ID": "3",
-                            "CORR_NOMB": "David"
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": {
-                            "Operador": "Movistar",
-                            "Sitio Tran": "Antena Movistar - Veraguas",
-                            "Estructura": "Torre celular",
-                            "Altura (m)": 30,
-                            "Lat_Dec": 8.0930,
-                            "Lon_Dec": -80.9716,
-                            "PROV_ID": "4",
-                            "PROV_NOMB": "Veraguas",
-                            "DIST_ID": "4",
-                            "DIST_NOMB": "Santiago",
-                            "CORR_ID": "4",
-                            "CORR_NOMB": "Santiago"
-                        }
-                    }
+                    { "type": "Feature", "properties": { "Operador": "Cable & Wireless", "Sitio Tran": "Torre C&W - Panamá", "Estructura": "Torre autosoportada", "Altura (m)": 85, "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5193, 8.9823] } },
+                    { "type": "Feature", "properties": { "Operador": "Claro", "Sitio Tran": "Antena Claro - Colón", "Estructura": "Torre monopolo", "Altura (m)": 45, "PROV_NOMB": "Colón", "DIST_NOMB": "Colón", "CORR_NOMB": "Cristóbal" }, "geometry": { "type": "Point", "coordinates": [-79.8869, 9.3431] } },
+                    { "type": "Feature", "properties": { "Operador": "Tigo", "Sitio Tran": "Torre Tigo - Chiriquí", "Estructura": "Torre autosoportada", "Altura (m)": 120, "PROV_NOMB": "Chiriquí", "DIST_NOMB": "David", "CORR_NOMB": "David" }, "geometry": { "type": "Point", "coordinates": [-82.4305, 8.4373] } },
+                    { "type": "Feature", "properties": { "Operador": "Movistar", "Sitio Tran": "Antena Movistar - Veraguas", "Estructura": "Torre celular", "Altura (m)": 30, "PROV_NOMB": "Veraguas", "DIST_NOMB": "Santiago", "CORR_NOMB": "Santiago" }, "geometry": { "type": "Point", "coordinates": [-80.9716, 8.0930] } }
                 ]
             };
-            
             torresData = ejemploData.features;
             procesarProvincias();
             mostrarTorres('TODAS');
-            actualizarContador(torresData.length);
         }
 
-        // Iniciar la aplicación
-        cargarTorres();
-
-        // Manejar errores de carga del mapa
-        map.on('error', function(e) {
-            console.warn('Error en el mapa:', e);
-        });
-
-        console.log('📡 Aplicación de Torres y Antenas de Panamá iniciada');
-        console.log('👨‍💻 Desarrollado por Raul Viquez');
+        // Disparador de inicio seguro una vez que el DOM está listo
+        document.addEventListener('DOMContentLoaded', cargarTorres);
     </script>
 </body>
 </html>
