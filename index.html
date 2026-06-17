@@ -381,13 +381,26 @@
                     .bindPopup(crearPopup(feature.properties));
                 markersLayer.addLayer(marker);
 
+                // Si la cobertura está encendida, calcular el buffer dinámico según la altura
                 if (mostrarBufferActivo) {
+                    // 1. Determinar el radio en metros basado en la altura
+                    let radioMetros = 5000; // Valor por defecto si no hay registro de altura
+                    
+                    if (altura > 0 && altura <= 50) {
+                        radioMetros = 3000;  // 3 km para estructuras bajas
+                    } else if (altura > 50 && altura <= 100) {
+                        radioMetros = 5000;  // 5 km para estructuras medianas
+                    } else if (altura > 100) {
+                        radioMetros = 8000;  // 8 km para grandes estructuras
+                    }
+
+                    // 2. Crear el circulo con el radio dinámico calculado
                     const buffer = L.circle([lat, lon], {
-                        radius: 5000, 
-                        color: '#3b82f6',      
+                        radius: radioMetros, 
+                        color: '#3b82f6',      // Azul pastel suave
                         weight: 1,
-                        fillColor: '#93c5fd',  
-                        fillOpacity: 0.22,
+                        fillColor: '#93c5fd',  // Relleno celeste pastel muy suave
+                        fillOpacity: 0.18,     // Bajamos un poco la opacidad para que no sature si se solapan
                         interactive: false     
                     });
                     bufferLayer.addLayer(buffer);
