@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TORRES Y ANTENAS DE PANAMÁ</title>
+    
+    <!-- Estilos de Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+        }
+        
+        #map {
+            height: calc(100vh - 120px);
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1a237e, #0d47a1);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            letter-spacing: 2px;
+            margin: 0;
+        }
+        
+        .controls {
+            background: white;
+            padding: 15px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            border-bottom: 2px solid #e0e0e0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .controls label {
+            font-weight: bold;
+            color: #1a237e;
+            font-size: 16px;
+        }
+        
+        .controls select {
+            padding: 8px 15px;
+            border: 2px solid #1a237e;
+            border-radius: 25px;
+            font-size: 15px;
+            min-width: 200px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .controls select:hover {
+            background: #f5f5f5;
+        }
+        
+        .controls select:focus {
+            outline: none;
+            border-color: #ff6f00;
+            box-shadow: 0 0 10px rgba(255, 111, 0, 0.3);
+        }
+        
+        .controls button {
+            padding: 8px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-reset {
+            background: #e53935;
+            color: white;
+        }
+        
+        .btn-reset:hover {
+            background: #c62828;
+            transform: scale(1.05);
+        }
+        
+        .btn-info {
+            background: #1a237e;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background: #0d47a1;
+            transform: scale(1.05);
+        }
+        
+        .footer {
+            background: #1a237e;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .footer span {
+            color: #ffd54f;
+            font-weight: bold;
+        }
+        
+        .stats {
+            background: rgba(255,255,255,0.9);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #1a237e;
+        }
+        
+        .info-popup {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .info-popup strong {
+            color: #1a237e;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                padding: 10px;
+            }
+            
+            .controls select {
+                width: 100%;
+                min-width: unset;
+            }
+            
+            #map {
+                height: calc(100vh - 200px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📡 TORRES Y ANTENAS DE PANAMÁ</h1>
+    </div>
+    
+    <div class="controls">
+        <label for="provincia">📍 Filtrar por Provincia:</label>
+        <select id="provincia">
+            <option value="TODAS">🌎 Todas las provincias</option>
+        </select>
+        <button class="btn-reset" onclick="resetMap()">🔄 Limpiar filtro</button>
+        <button class="btn-info" onclick="showStats()">📊 Ver estadísticas</button>
+        <span class="stats" id="contador">Total: 0 torres</span>
+    </div>
+    
+    <div id="map"></div>
+    
+    <div class="footer">
+        Desarrollado por <span>Raul Viquez</span> | © 2026 Todos los derechos reservados
+    </div>
+
+    <script>
+        // Inicializar el mapa centrado en Panamá
+        const map = L.map('map', {
+            center: [8.537, -80.782],
+            zoom: 8,
+            zoomControl: true
+        });
+
+        // Capa base de OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        // Variables globales
+        let torresData = [];
+        let markersLayer = L.layerGroup().addTo(map);
+        let provinciasUnicas = new Set();
+
+        // Función para cargar el GeoJSON
+        async function cargarTorres() {
+            try {
+                // Reemplaza esta URL con la ubicación de tu archivo torres.geojson
+                const response = await fetch('torres.geojson');
+                
+                if (!response.ok) {
+                    throw new Error('No se pudo cargar el archivo. Asegúrate de que torres.geojson esté en la misma carpeta.');
+                }
+                
+                const data = await response.json();
+                
+                // Verificar que tiene features
+                if (!data.features || data.features.length === 0) {
+                    throw new Error('El archivo no contiene datos válidos.');
+                }
+                
+                torresData = data.features;
+                procesarProvincias();
+                mostrarTorres('TODAS');
+                actualizarContador(torresData.length);
+                
+                console.log(`✅ ${torresData.length} torres cargadas correctamente`);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Error al cargar los datos:\n' + error.message + '\n\nAsegúrate de que el archivo torres.geojson esté en la misma carpeta que este HTML.');
+                
+                // Datos de ejemplo para demostración
+                cargarDatosEjemplo();
+            }
+        }
+
+        // Función para procesar provincias únicas
+        function procesarProvincias() {
+            const select = document.getElementById('provincia');
+            
+            torresData.forEach(feature => {
+                const provincia = feature.properties.PROV_NOMB;
+                if (provincia && provincia.trim() !== '') {
+                    provinciasUnicas.add(provincia.trim());
+                }
+            });
+            
+            // Ordenar alfabéticamente
+            const provinciasOrdenadas = Array.from(provinciasUnicas).sort();
+            
+            // Agregar al select
+            provinciasOrdenadas.forEach(prov => {
+                const option = document.createElement('option');
+                option.value = prov;
+                option.textContent = prov;
+                select.appendChild(option);
+            });
+            
+            // Evento de cambio en el select
+            select.addEventListener('change', function() {
+                const provinciaSeleccionada = this.value;
+                mostrarTorres(provinciaSeleccionada);
+            });
+        }
+
+        // Función para mostrar torres según filtro
+        function mostrarTorres(provinciaFiltro) {
+            // Limpiar marcadores anteriores
+            markersLayer.clearLayers();
+            
+            // Filtrar datos
+            let torresFiltradas = torresData;
+            if (provinciaFiltro !== 'TODAS') {
+                torresFiltradas = torresData.filter(feature => {
+                    return feature.properties.PROV_NOMB === provinciaFiltro;
+                });
+            }
+            
+            // Crear marcadores con iconos personalizados
+            torresFiltradas.forEach(feature => {
+                const props = feature.properties;
+                const lat = props.Lat_Dec;
+                const lon = props.Lon_Dec;
+                
+                // Verificar coordenadas válidas
+                if (lat && lon && !isNaN(lat) && !isNaN(lon)) {
+                    // Icono personalizado según altura
+                    const altura = props['Altura (m)'] || 0;
+                    let iconColor = '#00C853'; // Verde - baja
+                    if (altura > 50) iconColor = '#FF6F00'; // Naranja - media
+                    if (altura > 100) iconColor = '#D50000'; // Rojo - alta
+                    
+                    const icon = L.divIcon({
+                        className: 'custom-icon',
+                        html: `<div style="background-color: ${iconColor}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>`,
+                        iconSize: [12, 12],
+                        iconAnchor: [6, 6]
+                    });
+                    
+                    const marker = L.marker([lat, lon], { icon: icon })
+                        .addTo(markersLayer)
+                        .bindPopup(crearPopup(props));
+                }
+            });
+            
+            // Actualizar contador
+            actualizarContador(torresFiltradas.length);
+            
+            // Ajustar zoom si hay puntos
+            if (torresFiltradas.length > 0) {
+                const bounds = markersLayer.getBounds();
+                if (bounds.isValid()) {
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                }
+            }
+        }
+
+        // Función para crear el popup con información
+        function crearPopup(props) {
+            const altura = props['Altura (m)'] || 'No especificada';
+            const operador = props.Operador || 'No especificado';
+            const sitio = props['Sitio Tran'] || 'No especificado';
+            const estructura = props.Estructura || 'No especificada';
+            const provincia = props.PROV_NOMB || 'No especificada';
+            const distrito = props.DIST_NOMB || 'No especificado';
+            const corregimiento = props.CORR_NOMB || 'No especificado';
+            
+            return `
+                <div class="info-popup">
+                    <h3 style="color: #1a237e; margin: 0 0 10px 0;">📡 ${sitio}</h3>
+                    <p><strong>Operador:</strong> ${operador}</p>
+                    <p><strong>Estructura:</strong> ${estructura}</p>
+                    <p><strong>Altura:</strong> ${altura} m</p>
+                    <hr style="border: 1px solid #e0e0e0; margin: 8px 0;">
+                    <p><strong>Provincia:</strong> ${provincia}</p>
+                    <p><strong>Distrito:</strong> ${distrito}</p>
+                    <p><strong>Corregimiento:</strong> ${corregimiento}</p>
+                </div>
+            `;
+        }
+
+        // Función para actualizar contador
+        function actualizarContador(cantidad) {
+            document.getElementById('contador').textContent = `Total: ${cantidad} torres`;
+        }
+
+        // Función para resetear el mapa
+        function resetMap() {
+            document.getElementById('provincia').value = 'TODAS';
+            mostrarTorres('TODAS');
+            map.setView([8.537, -80.782], 8);
+        }
+
+        // Función para mostrar estadísticas
+        function showStats() {
+            const total = torresData.length;
+            const provincias = provinciasUnicas.size;
+            
+            // Calcular torres por provincia
+            let statsPorProvincia = {};
+            torresData.forEach(feature => {
+                const prov = feature.properties.PROV_NOMB;
+                if (prov) {
+                    statsPorProvincia[prov] = (statsPorProvincia[prov] || 0) + 1;
+                }
+            });
+            
+            // Ordenar provincias por cantidad
+            const statsOrdenadas = Object.entries(statsPorProvincia)
+                .sort((a, b) => b[1] - a[1]);
+            
+            let mensaje = `📊 ESTADÍSTICAS DE TORRES Y ANTENAS\n`;
+            mensaje += `================================\n`;
+            mensaje += `Total de torres: ${total}\n`;
+            mensaje += `Provincias: ${provincias}\n`;
+            mensaje += `\n📌 Distribución por provincia:\n`;
+            
+            statsOrdenadas.forEach(([prov, cantidad]) => {
+                const porcentaje = ((cantidad / total) * 100).toFixed(1);
+                mensaje += `  • ${prov}: ${cantidad} (${porcentaje}%)\n`;
+            });
+            
+            alert(mensaje);
+        }
+
+        // DATOS DE EJEMPLO (si no se puede cargar el GeoJSON)
+        function cargarDatosEjemplo() {
+            console.log('📌 Cargando datos de ejemplo...');
+            
+            const ejemploData = {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "Operador": "Cable & Wireless",
+                            "Sitio Tran": "Torre C&W - Panamá",
+                            "Estructura": "Torre autosoportada",
+                            "Altura (m)": 85,
+                            "Lat_Dec": 8.9823,
+                            "Lon_Dec": -79.5193,
+                            "PROV_ID": "1",
+                            "PROV_NOMB": "Panamá",
+                            "DIST_ID": "1",
+                            "DIST_NOMB": "Panamá",
+                            "CORR_ID": "1",
+                            "CORR_NOMB": "San Francisco"
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "Operador": "Claro",
+                            "Sitio Tran": "Antena Claro - Colón",
+                            "Estructura": "Torre monopolo",
+                            "Altura (m)": 45,
+                            "Lat_Dec": 9.3431,
+                            "Lon_Dec": -79.8869,
+                            "PROV_ID": "2",
+                            "PROV_NOMB": "Colón",
+                            "DIST_ID": "2",
+                            "DIST_NOMB": "Colón",
+                            "CORR_ID": "2",
+                            "CORR_NOMB": "Cristóbal"
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "Operador": "Tigo",
+                            "Sitio Tran": "Torre Tigo - Chiriquí",
+                            "Estructura": "Torre autosoportada",
+                            "Altura (m)": 120,
+                            "Lat_Dec": 8.4373,
+                            "Lon_Dec": -82.4305,
+                            "PROV_ID": "3",
+                            "PROV_NOMB": "Chiriquí",
+                            "DIST_ID": "3",
+                            "DIST_NOMB": "David",
+                            "CORR_ID": "3",
+                            "CORR_NOMB": "David"
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "Operador": "Movistar",
+                            "Sitio Tran": "Antena Movistar - Veraguas",
+                            "Estructura": "Torre celular",
+                            "Altura (m)": 30,
+                            "Lat_Dec": 8.0930,
+                            "Lon_Dec": -80.9716,
+                            "PROV_ID": "4",
+                            "PROV_NOMB": "Veraguas",
+                            "DIST_ID": "4",
+                            "DIST_NOMB": "Santiago",
+                            "CORR_ID": "4",
+                            "CORR_NOMB": "Santiago"
+                        }
+                    }
+                ]
+            };
+            
+            torresData = ejemploData.features;
+            procesarProvincias();
+            mostrarTorres('TODAS');
+            actualizarContador(torresData.length);
+        }
+
+        // Iniciar la aplicación
+        cargarTorres();
+
+        // Manejar errores de carga del mapa
+        map.on('error', function(e) {
+            console.warn('Error en el mapa:', e);
+        });
+
+        console.log('📡 Aplicación de Torres y Antenas de Panamá iniciada');
+        console.log('👨‍💻 Desarrollado por Raul Viquez');
+    </script>
+</body>
+</html>
