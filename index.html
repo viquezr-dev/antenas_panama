@@ -150,6 +150,37 @@
             padding-bottom: 4px;
         }
 
+        /* Estilos para la leyenda flotante */
+        .legend {
+            background: white;
+            padding: 12px;
+            line-height: 20px;
+            color: #334155;
+            border-radius: 8px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.15);
+            font-size: 12px;
+        }
+        
+        .legend h4 {
+            margin: 0 0 8px 0;
+            color: #475569;
+            font-size: 13px;
+            font-weight: 600;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 4px;
+        }
+        
+        .legend i {
+            width: 12px;
+            height: 12px;
+            float: left;
+            margin-right: 8px;
+            margin-top: 4px;
+            opacity: 0.9;
+            border-radius: 50%;
+            border: 1.5px solid #475569; /* Borde de contraste */
+        }
+
         @media (max-width: 1024px) {
             .controls {
                 flex-direction: column;
@@ -213,6 +244,20 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             opacity: 0.75
         }).addTo(map);
+
+        // Crear e integrar la leyenda flotante (esquina inferior derecha)
+        const legend = L.control({ position: 'bottomright' });
+        legend.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'legend');
+            div.innerHTML = `
+                <h4>Altura de Estructura</h4>
+                <p><i style="background: #a7f3d0"></i> Menor de 50 m</p>
+                <p><i style="background: #fde68a"></i> 50 m — 100 m</p>
+                <p><i style="background: #fca5a5"></i> Mayor de 100 m</p>
+            `;
+            return div;
+        };
+        legend.addTo(map);
 
         // Variables de estado
         let torresData = [];
@@ -317,7 +362,7 @@
 
                 if (!lat || !lon || isNaN(lat) || isNaN(lon)) return;
 
-                // --- NUEVA LÓGICA DE COLORIZACIÓN PASTEL INTEGRADA ---
+                // Lógica de colorización pastel integrada según la altura
                 const altura = feature.properties['Altura (m)'] || 0;
                 let iconColor = '#a7f3d0'; // Verde menta (<50m)
                 if (altura > 50) iconColor = '#fde68a';  // Amarillo pastel (50m - 100m)
