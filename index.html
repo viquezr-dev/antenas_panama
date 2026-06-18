@@ -221,7 +221,7 @@
             <select id="corregimiento" disabled><option value="TODOS">Todos</option></select>
         </div>
 
-        <button id="btnBuffer" class="btn-buffer" onclick="toggleBuffer()">⭕ Mostrar Cobertura (5km)</button>
+        <button id="btnBuffer" class="btn-buffer" onclick="toggleBuffer()">⭕ Mostrar Cobertura (km)</button>
         <button class="btn-reset" onclick="resetMap()">🔄 Resetear Filtros</button>
         <span class="stats" id="contador">0 torres encontradas</span>
     </div>
@@ -449,7 +449,7 @@
             selectCorr.disabled = true;
             mostrarBufferActivo = false;
             btnBuffer.classList.remove('active');
-            btnBuffer.textContent = '⭕ Mostrar Cobertura (5km)';
+            btnBuffer.textContent = '⭕ Mostrar Cobertura (km)';
             
             filtrarYRenderizar();
             map.setView([8.537, -80.782], 8);
