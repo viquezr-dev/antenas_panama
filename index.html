@@ -100,6 +100,16 @@
             border-color: #86efac;
         }
 
+        .btn-export {
+            background: #bae6fd; /* Azul cielo pastel */
+            color: #0369a1;
+            border: 1px solid #7dd3fc;
+        }
+
+        .btn-export:hover {
+            background: #7dd3fc;
+        }
+
         .btn-reset {
             background: #fee2e2; /* Rojo/Rosa pastel */
             color: #991b1b;
@@ -243,6 +253,7 @@
         </div>
 
         <button id="btnBuffer" class="btn-buffer" onclick="toggleBuffer()">⭕ Mostrar Cobertura Dinámica</button>
+        <button class="btn-export" onclick="exportarColegiosSinCoberturaCSV()">📥 Exportar Fuera de Cobertura (CSV)</button>
         <button class="btn-reset" onclick="resetMap()">🔄 Resetear Filtros</button>
         <span class="stats" id="contador">0 elementos encontrados</span>
     </div>
@@ -266,17 +277,19 @@
             opacity: 0.75
         }).addTo(map);
 
-        // Variables de estado y fuentes de datos
+        // Variables de estado y fuentes de datos globales
         let torresData = [];
         let colegiosData = [];
+        let torresFiltradasGlobal = [];
+        let colegiosFiltradosGlobal = [];
         let mostrarBufferActivo = false;
 
         // Capas contenedoras (Leaflet LayerGroups)
-        const markersLayer = L.layerGroup().addTo(map); // Torres
-        const bufferLayer = L.layerGroup().addTo(map);  // Coberturas de torres
-        const colegiosLayer = L.layerGroup().addTo(map); // Colegios (Inicia encendido)
+        const markersLayer = L.layerGroup().addTo(map); 
+        const bufferLayer = L.layerGroup().addTo(map);  
+        const colegiosLayer = L.layerGroup().addTo(map); 
 
-        // Control de Capas para activar/desactivar de manera independiente
+        // Control de Capas
         const overlayMaps = {
             "📡 Torres de Telecomunicación": markersLayer,
             "⭕ Zonas de Cobertura": bufferLayer,
@@ -284,7 +297,7 @@
         };
         L.control.layers(null, overlayMaps, { collapsed: false, position: 'topright' }).addTo(map);
 
-        // Crear e integrar la leyenda flotante unificada (abajo a la derecha)
+        // Leyenda flotante
         const legend = L.control({ position: 'bottomright' });
         legend.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'legend');
@@ -304,16 +317,13 @@
         };
         legend.addTo(map);
 
-        // Nodos del DOM
         const selectProv = document.getElementById('provincia');
         const selectDist = document.getElementById('distrito');
         const selectCorr = document.getElementById('corregimiento');
         const btnBuffer = document.getElementById('btnBuffer');
 
-        // Carga en paralelo de ambos archivos GeoJSON
         async function cargarDatos() {
             try {
-                // Intentar cargar archivos reales
                 const [resTorres, resColegios] = await Promise.all([
                     fetch('torres.geojson').catch(e => null),
                     fetch('colegios.geojson').catch(e => null)
@@ -328,7 +338,6 @@
                     colegiosData = data.features;
                 }
 
-                // Si ambos fallan o están vacíos (entorno local), cargar mocks
                 if (torresData.length === 0 && colegiosData.length === 0) {
                     console.warn('Cargando sets de datos de respaldo locales.');
                     cargarMocksEjemplo();
@@ -341,9 +350,7 @@
             }
         }
 
-        // Lógica de cascada indexada cruzando ambas fuentes de datos
         function inicializarFiltrosCascada() {
-            // Unificar lista de provincias de ambos conjuntos para asegurar integridad
             const todasProvincias = [...new Set([
                 ...torresData.map(f => f.properties.PROV_NOMB),
                 ...colegiosData.map(f => f.properties.PROV_NOMB)
@@ -391,19 +398,16 @@
             selectCorr.addEventListener('change', filtrarYRenderizar);
         }
 
-        // Determinar color de colegio según su nivel educativo (Pastel)
         function obtenerColorColegio(nivel) {
-            if (!nivel) return '#94a3b8'; // Gris neutro si viene vacío
+            if (!nivel) return '#94a3b8';
             const n = nivel.toUpperCase();
-            if (n.includes('PRIM') || n.includes('BAS')) return '#c084fc'; // Morado pastel
-            if (n.includes('MED') || n.includes('SEC')) return '#60a5fa';  // Azul pastel
-            if (n.includes('TEL') || n.includes('MULT')) return '#f472b6'; // Rosa pastel
-            return '#94a3b8'; // Otros niveles
+            if (n.includes('PRIM') || n.includes('BAS')) return '#c084fc'; 
+            if (n.includes('MED') || n.includes('SEC')) return '#60a5fa';  
+            if (n.includes('TEL') || n.includes('MULT')) return '#f472b6'; 
+            return '#94a3b8'; 
         }
 
-        // Filtrado dinámico y renderizado de ambas capas geométricas
         function filtrarYRenderizar() {
-            // Limpiar capas existentes
             markersLayer.clearLayers();
             bufferLayer.clearLayers();
             colegiosLayer.clearLayers();
@@ -412,17 +416,14 @@
             const dSel = selectDist.value;
             const cSel = selectCorr.value;
 
-            // ---------------------------------------------
-            // RENDERS DE CAPA: TORRES
-            // ---------------------------------------------
-            let torresFiltradas = torresData.filter(f => {
+            torresFiltradasGlobal = torresData.filter(f => {
                 if (pSel !== 'TODAS' && f.properties.PROV_NOMB !== pSel) return false;
                 if (dSel !== 'TODOS' && f.properties.DIST_NOMB !== dSel) return false;
                 if (cSel !== 'TODOS' && f.properties.CORR_NOMB !== cSel) return false;
                 return true;
             });
 
-            torresFiltradas.forEach(feature => {
+            torresFiltradasGlobal.forEach(feature => {
                 let lat = feature.geometry?.coordinates[1] || parseFloat(feature.properties.Lat_Dec);
                 let lon = feature.geometry?.coordinates[0] || parseFloat(feature.properties.Lon_Dec);
                 if (isNaN(lat) || isNaN(lon)) return;
@@ -442,7 +443,6 @@
                 }).bindPopup(crearPopupTorre(feature.properties));
                 markersLayer.addLayer(marker);
 
-                // Buffers de cobertura dinámicos
                 if (mostrarBufferActivo) {
                     let radioMetros = 5000;
                     if (altura > 0 && altura <= 50) radioMetros = 3000;
@@ -461,18 +461,14 @@
                 }
             });
 
-            // ---------------------------------------------
-            // RENDERS DE CAPA: COLEGIOS (Marcador Cuadrado)
-            // ---------------------------------------------
-            let colegiosFiltrados = colegiosData.filter(f => {
+            colegiosFiltradosGlobal = colegiosData.filter(f => {
                 if (pSel !== 'TODAS' && f.properties.PROV_NOMB !== pSel) return false;
                 if (dSel !== 'TODOS' && f.properties.DIST_NOMB !== dSel) return false;
                 if (cSel !== 'TODOS' && f.properties.CORR_NOMB !== cSel) return false;
                 return true;
             });
 
-            colegiosFiltrados.forEach(feature => {
-                // Leer coordenadas estándar GeoJSON o campos planos Latitud/Longitud
+            colegiosFiltradosGlobal.forEach(feature => {
                 let lat = feature.geometry?.coordinates[1] || parseFloat(feature.properties.Latitud);
                 let lon = feature.geometry?.coordinates[0] || parseFloat(feature.properties.Longitud);
                 if (isNaN(lat) || isNaN(lon)) return;
@@ -480,23 +476,6 @@
                 const nivel = feature.properties.Nivel_Esc || '';
                 const escolarColor = obtenerColorColegio(nivel);
 
-                // Generar cuadro usando circleMarker variando las propiedades de estilo
-                const colegioMarker = L.circleMarker([lat, lon], {
-                    radius: 6,
-                    fillColor: escolarColor,
-                    color: '#1e293b', 
-                    weight: 1.5,
-                    opacity: 0.9,
-                    fillOpacity: 1,
-                    // Leaflet no tiene tipo "square", pero dándole un renderer con esquinas rectas se simula
-                    // De manera universal y limpia usamos bordes marcados o el truco estructural nativo
-                }).bindPopup(crearPopupColegio(feature.properties));
-
-                // Para forzar la forma cuadrada exacta en Leaflet de forma nativa sin cargar plugins pesados,
-                // reescribimos el Path de despliegue mediante SVG en el marcador si es necesario, 
-                // pero un CircleMarker de radio pequeño cumple con la visualización limpia. 
-                // Si requieres visual de polígono estricto, cambiamos a un L.polygon o DivIcon rectangular:
-                
                 const squareIcon = L.divIcon({
                     className: 'custom-square-icon',
                     html: `<div style="width:11px; height:11px; background-color:${escolarColor}; border:1.5px solid #1e293b; opacity:0.95;"></div>`,
@@ -510,27 +489,140 @@
                 colegiosLayer.addLayer(markerCuadrado);
             });
 
-            // Actualizar Estadísticas Totales
-            const totalEncontrados = torresFiltradas.length + colegiosFiltrados.length;
-            document.getElementById('contador').textContent = `${torresFiltradas.length} torres | ${colegiosFiltrados.length} colegios en zona`;
+            document.getElementById('contador').textContent = `${torresFiltradasGlobal.length} torres | ${colegiosFiltradosGlobal.length} colegios en zona`;
 
-            // Auto-encuadre de cámara integrado
-            if (totalEncontrados > 0 && (pSel !== 'TODAS' || dSel !== 'TODOS')) {
-                const totalGroup = L.featureGroup([
-                    ...markersLayer.getLayers(), 
-                    ...colegiosLayer.getLayers()
-                ]);
+            if ((torresFiltradasGlobal.length + colegiosFiltradosGlobal.length) > 0 && (pSel !== 'TODAS' || dSel !== 'TODOS')) {
+                const totalGroup = L.featureGroup([...markersLayer.getLayers(), ...colegiosLayer.getLayers()]);
                 map.fitBounds(totalGroup.getBounds(), { padding: [40, 40], maxZoom: 14 });
             }
         }
 
-        // Alternar el estado de los Buffers
+        // Cálculo de Distancia Geodésica
+        function calcularDistanciaMetros(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; 
+            const phi1 = lat1 * Math.PI / 180;
+            const phi2 = lat2 * Math.PI / 180;
+            const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+            const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+                      Math.cos(phi1) * Math.cos(phi2) *
+                      Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c;
+        }
+
+        // 📥 NUEVA LÓGICA DE EXPORTACIÓN A ARCHIVO CSV
+        function exportarColegiosSinCoberturaCSV() {
+            if (colegiosFiltradosGlobal.length === 0) {
+                alert("No hay colegios en el área seleccionada para analizar.");
+                return;
+            }
+
+            // Realizar el cruce espacial de proximidad
+            const colegiosSinCobertura = colegiosFiltradosGlobal.filter(colegio => {
+                let cLat = colegio.geometry?.coordinates[1] || parseFloat(colegio.properties.Latitud);
+                let cLon = colegio.geometry?.coordinates[0] || parseFloat(colegio.properties.Longitud);
+                
+                if (isNaN(cLat) || isNaN(cLon)) return false;
+
+                const estaCubierto = torresFiltradasGlobal.some(torre => {
+                    let tLat = torre.geometry?.coordinates[1] || parseFloat(torre.properties.Lat_Dec);
+                    let tLon = torre.geometry?.coordinates[0] || parseFloat(torre.properties.Lon_Dec);
+                    if (isNaN(tLat) || isNaN(tLon)) return false;
+
+                    const altura = torre.properties['Altura (m)'] || 0;
+                    let radioTorre = 5000;
+                    if (altura > 0 && altura <= 50) radioTorre = 3000;
+                    else if (altura > 50 && altura <= 100) radioTorre = 5000;
+                    else if (altura > 100) radioTorre = 8000;
+
+                    const distancia = calcularDistanciaMetros(cLat, cLon, tLat, tLon);
+                    return distancia <= radioTorre;
+                });
+
+                return !estaCubierto;
+            });
+
+            if (colegiosSinCobertura.length === 0) {
+                alert("Todos los colegios analizados se encuentran dentro del rango de cobertura de alguna antena.");
+                return;
+            }
+
+            // Definir las cabeceras fijas basadas en la estructura del GeoJSON proporcionado
+            const headers = [
+                "Latitud", "Longitud", "Escuela", "Nivel_Esc", "Matricula", 
+                "S_Internet", "A_Banda", "Serv_Exist", "F_Energia", "Tipo_Acces", 
+                "T_Ofertada", "V_Ofertada", "PROV_ID", "PROV_NOMB", "DIST_ID", 
+                "DIST_NOMB", "CORR_ID", "CORR_NOMB"
+            ];
+
+            // Generar las filas del CSV mapeando los atributos
+            const csvRows = [];
+            csvRows.push(headers.join(",")); // Fila 1: Títulos de columna
+
+            colegiosSinCobertura.forEach(colegio => {
+                let lat = colegio.geometry?.coordinates[1] || colegio.properties.Latitud;
+                let lon = colegio.geometry?.coordinates[0] || colegio.properties.Longitud;
+                const props = colegio.properties;
+
+                const values = [
+                    lat,
+                    lon,
+                    escapeCSVValue(props.Escuela),
+                    escapeCSVValue(props.Nivel_Esc),
+                    escapeCSVValue(props.Matricula),
+                    escapeCSVValue(props.S_Internet),
+                    escapeCSVValue(props.A_Banda),
+                    escapeCSVValue(props.Serv_Exist),
+                    escapeCSVValue(props.F_Energia),
+                    escapeCSVValue(props.Tipo_Acces),
+                    escapeCSVValue(props.T_Ofertada),
+                    escapeCSVValue(props.V_Ofertada),
+                    escapeCSVValue(props.PROV_ID),
+                    escapeCSVValue(props.PROV_NOMB),
+                    escapeCSVValue(props.DIST_ID),
+                    escapeCSVValue(props.DIST_NOMB),
+                    escapeCSVValue(props.CORR_ID),
+                    escapeCSVValue(props.CORR_NOMB)
+                ];
+                csvRows.push(values.join(","));
+            });
+
+            // Unir filas con salto de línea. El prefijo '\uFEFF' fuerza a Excel a leer el archivo en UTF-8
+            const csvContent = "\uFEFF" + csvRows.join("\n");
+            
+            // Crear Blob del archivo para la descarga automática
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const downloadAnchor = document.createElement('a');
+            
+            const provName = selectProv.value.toLowerCase().replace(/ /g, "_");
+            downloadAnchor.setAttribute("href", url);
+            downloadAnchor.setAttribute("download", `colegios_sin_cobertura_${provName}.csv`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            document.body.removeChild(downloadAnchor);
+        }
+
+        // Función auxiliar indispensable para evitar fallos si el texto contiene comas, comillas o saltos de línea
+        function escapeCSVValue(val) {
+            if (val === undefined || val === null) return "";
+            let stringValue = String(val).trim();
+            // Si tiene comas o comillas, se envuelve entre comillas dobles y se duplican las internas
+            if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                stringValue = stringValue.replace(/"/g, '""');
+                return `"${stringValue}"`;
+            }
+            return stringValue;
+        }
+
         function toggleBuffer() {
             mostrarBufferActivo = !mostrarBufferActivo;
             if (mostrarBufferActivo) {
                 btnBuffer.classList.add('active');
                 btnBuffer.textContent = '⭕ Ocultar Coberturas';
-                // Si estaba apagado en el control de capas, forzar encendido para consistencia visual
                 if (!map.hasLayer(bufferLayer)) map.addLayer(bufferLayer);
             } else {
                 btnBuffer.classList.remove('active');
@@ -539,7 +631,6 @@
             filtrarYRenderizar();
         }
 
-        // Popups Descriptivos Estructurados
         function crearPopupTorre(props) {
             return `
                 <div class="info-popup">
@@ -581,7 +672,6 @@
             btnBuffer.classList.remove('active');
             btnBuffer.textContent = '⭕ Mostrar Cobertura Dinámica';
             
-            // Restablecer capas visibles
             if (!map.hasLayer(markersLayer)) map.addLayer(markersLayer);
             if (!map.hasLayer(colegiosLayer)) map.addLayer(colegiosLayer);
             
@@ -589,7 +679,6 @@
             map.setView([8.537, -80.782], 8);
         }
 
-        // Datos Mock robustos por si trabajas localmente sin servidor HTTP web activo
         function cargarMocksEjemplo() {
             torresData = [
                 { "type": "Feature", "properties": { "Operador": "Más Móvil", "Sitio Tran": "Torre Central San Francisco", "Estructura": "Monopolo", "Altura (m)": 45, "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5193, 8.9823] } },
@@ -598,8 +687,9 @@
             
             colegiosData = [
                 { "type": "Feature", "properties": { "Escuela": "Escuela Belisario Porras", "Nivel_Esc": "Primaria", "Matricula": "450 alumnos", "S_Internet": "SI", "A_Banda": "20 Mbps", "F_Energia": "Red Pública", "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5150, 8.9840] } },
-                { "type": "Feature", "properties": { "Escuela": "Colegio Richard Neumann", "Nivel_Esc": "Premedia / Media", "Matricula": "890 alumnos", "S_Internet": "NO", "A_Banda": "Sin servicio", "F_Energia": "Red Pública", "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "Bella Vista" }, "geometry": { "type": "Point", "coordinates": [-79.5290, 8.9890] } }
-            ];
+                { "type": "Feature", "properties": { "Escuela": "Colegio Richard Neumann", "Nivel_Esc": "Premedia / Media", "Matricula": "890 alumnos", "S_Internet": "NO", "A_Banda": "Sin servicio", "F_Energia": "Red Pública", "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "Bella Vista" }, "geometry": { "type": "Point", "coordinates": [-79.5290, 8.9890] } },
+                { "type": "Feature", "properties": { "Escuela": "Escuela Rural Desconectada", "Nivel_Esc": "Primaria", "Matricula": "45 alumnos", "S_Internet": "NO", "A_Banda": "Sin servicio", "F_Energia": "Panel Solar", "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "Pacora" }, "geometry": { "type": "Point", "coordinates": [-79.2800, 9.0800] } }
+            ]
         }
 
         document.addEventListener('DOMContentLoaded', cargarDatos);
