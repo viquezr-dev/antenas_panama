@@ -100,14 +100,25 @@
             border-color: #86efac;
         }
 
-        .btn-export {
-            background: #bae6fd;
+        .btn-export-cobertura {
+            background: #bae6fd; /* Azul cielo pastel */
             color: #0369a1;
             border: 1px solid #7dd3fc;
         }
 
-        .btn-export:hover {
+        .btn-export-cobertura:hover {
             background: #7dd3fc;
+        }
+
+        .btn-export-infra {
+            background: #ddd6fe; /* Morado/Lavanda pastel */
+            color: #5b21b6;
+            border: 1px solid #c084fc;
+        }
+
+        .btn-export-infra:hover {
+            background: #c084fc;
+            color: white;
         }
 
         .btn-reset {
@@ -222,7 +233,7 @@
                 width: 100%;
             }
             #map {
-                height: calc(100vh - 340px);
+                height: calc(100vh - 380px);
             }
         }
     </style>
@@ -259,7 +270,11 @@
         </div>
 
         <button id="btnBuffer" class="btn-buffer" onclick="toggleBuffer()">⭕ Mostrar Cobertura Dinámica</button>
-        <button class="btn-export" onclick="exportarColegiosSinCoberturaCSV()">📥 Exportar Fuera de Cobertura (CSV)</button>
+        
+        <button class="btn-export-cobertura" onclick="exportarColegiosSinCoberturaCSV()">📥 Fuera de Cobertura (CSV)</button>
+        
+        <button class="btn-export-infra" onclick="exportarTodosLosColegiosFiltradosCSV()">📊 Exportar Todo por Filtro (CSV)</button>
+        
         <button class="btn-reset" onclick="resetMap()">🔄 Resetear Filtros</button>
         <span class="stats" id="contador">0 elementos encontrados</span>
     </div>
@@ -323,6 +338,14 @@
         const selectEnergia = document.getElementById('energia');
         const btnBuffer = document.getElementById('btnBuffer');
 
+        // Cabeceras fijas reutilizables para el CSV
+        const csvHeaders = [
+            "Latitud", "Longitud", "Escuela", "Nivel_Esc", "Matricula", 
+            "S_Internet", "A_Banda", "Serv_Exist", "F_Energia", "Tipo_Acces", 
+            "T_Ofertada", "V_Ofertada", "PROV_ID", "PROV_NOMB", "DIST_ID", 
+            "DIST_NOMB", "CORR_ID", "CORR_NOMB"
+        ];
+
         async function cargarDatos() {
             try {
                 const [resTorres, resColegios] = await Promise.all([
@@ -345,10 +368,7 @@
                 }
 
                 inicializarFiltrosCascada();
-                
-                // Escuchar el cambio en el nuevo select de energía eléctrica
                 selectEnergia.addEventListener('change', filtrarYRenderizar);
-                
                 filtrarYRenderizar();
             } catch (error) {
                 console.error('Error inicializando el mapa:', error);
@@ -420,9 +440,8 @@
             const pSel = selectProv.value;
             const dSel = selectDist.value;
             const cSel = selectCorr.value;
-            const eSel = selectEnergia.value; // Capturar estado del filtro de energía
+            const eSel = selectEnergia.value;
 
-            // 1. Filtrar e Imprimir Torres (No les afecta el filtro F_Energia)
             torresFiltradasGlobal = torresData.filter(f => {
                 if (pSel !== 'TODAS' && f.properties.PROV_NOMB !== pSel) return false;
                 if (dSel !== 'TODOS' && f.properties.DIST_NOMB !== dSel) return false;
@@ -468,18 +487,15 @@
                 }
             });
 
-            // 2. Filtrar e Imprimir Colegios (Evaluando ubicación Y estado de Electricidad)
             colegiosFiltradosGlobal = colegiosData.filter(f => {
                 if (pSel !== 'TODAS' && f.properties.PROV_NOMB !== pSel) return false;
                 if (dSel !== 'TODOS' && f.properties.DIST_NOMB !== dSel) return false;
                 if (cSel !== 'TODOS' && f.properties.CORR_NOMB !== cSel) return false;
                 
-                // Filtro estricto por campo F_Energia
                 if (eSel !== 'TODOS') {
                     const energiaDato = (f.properties.F_Energia || '').toUpperCase().trim();
                     if (energiaDato !== eSel) return false;
                 }
-                
                 return true;
             });
 
@@ -527,6 +543,7 @@
             return R * c;
         }
 
+        // 📥 BOTÓN 1: EXPORTAR SOLO LOS QUE ESTÁN FUERA DE COBERTURA
         function exportarColegiosSinCoberturaCSV() {
             if (colegiosFiltradosGlobal.length === 0) {
                 alert("No hay colegios que cumplan con los filtros actuales para ser analizados.");
@@ -562,17 +579,25 @@
                 return;
             }
 
-            const headers = [
-                "Latitud", "Longitud", "Escuela", "Nivel_Esc", "Matricula", 
-                "S_Internet", "A_Banda", "Serv_Exist", "F_Energia", "Tipo_Acces", 
-                "T_Ofertada", "V_Ofertada", "PROV_ID", "PROV_NOMB", "DIST_ID", 
-                "DIST_NOMB", "CORR_ID", "CORR_NOMB"
-            ];
+            descargarCSVProcesado(colegiosSinCobertura, "sin_cobertura");
+        }
 
+        // 📊 BOTÓN 2: NUEVA FUNCIÓN PARA EXPORTAR TODO LO QUE SE VE EN PANTALLA (CON O SIN COBERTURA)
+        function exportarTodosLosColegiosFiltradosCSV() {
+            if (colegiosFiltradosGlobal.length === 0) {
+                alert("No hay colegios en la pantalla para exportar bajo los filtros actuales.");
+                return;
+            }
+            // Descarga de manera directa la lista global filtrada
+            descargarCSVProcesado(colegiosFiltradosGlobal, "reporte_general");
+        }
+
+        // Función interna unificada para generar el archivo de descarga CSV
+        function descargarCSVProcesado(listaColegios, prefijoNombre) {
             const csvRows = [];
-            csvRows.push(headers.join(",")); 
+            csvRows.push(csvHeaders.join(",")); 
 
-            colegiosSinCobertura.forEach(colegio => {
+            listaColegios.forEach(colegio => {
                 let lat = colegio.geometry?.coordinates[1] || colegio.properties.Latitud;
                 let lon = colegio.geometry?.coordinates[0] || colegio.properties.Longitud;
                 const props = colegio.properties;
@@ -607,8 +632,9 @@
             
             const provName = selectProv.value.toLowerCase().replace(/ /g, "_");
             const elecState = selectEnergia.value.toLowerCase();
+            
             downloadAnchor.setAttribute("href", url);
-            downloadAnchor.setAttribute("download", `colegios_sin_cobertura_${provName}_energia_${elecState}.csv`);
+            downloadAnchor.setAttribute("download", `colegios_${prefijoNombre}_${provName}_energia_${elecState}.csv`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             document.body.removeChild(downloadAnchor);
