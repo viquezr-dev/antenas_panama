@@ -19,31 +19,34 @@
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: #f4f6f8;
             color: #334155;
-            padding-bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
         
         .header {
             background: #475569;
             color: #f8fafc;
-            padding: 15px 20px;
+            padding: 12px 15px;
             text-align: center;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
         .header h1 {
-            font-size: 24px;
+            font-size: 18px;
             font-weight: 500;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
         
+        /* Contenedor principal de controles optimizado */
         .controls {
             background: white;
-            padding: 15px 20px;
+            padding: 12px;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 10px;
             border-bottom: 1px solid #e2e8f0;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
@@ -57,15 +60,16 @@
         .controls label {
             font-weight: 500;
             color: #64748b;
-            font-size: 14px;
+            font-size: 13px;
+            white-space: nowrap;
         }
         
         .controls select {
-            padding: 6px 12px;
+            padding: 6px 10px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
-            font-size: 14px;
-            min-width: 140px;
+            font-size: 13px;
+            min-width: 130px;
             background: #f8fafc;
             color: #334155;
             cursor: pointer;
@@ -79,13 +83,16 @@
         }
         
         .controls button {
-            padding: 7px 16px;
+            padding: 8px 14px;
             border: none;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .btn-buffer {
@@ -101,7 +108,7 @@
         }
 
         .btn-export-cobertura {
-            background: #bae6fd; /* Azul cielo pastel */
+            background: #bae6fd;
             color: #0369a1;
             border: 1px solid #7dd3fc;
         }
@@ -111,7 +118,7 @@
         }
 
         .btn-export-infra {
-            background: #ddd6fe; /* Morado/Lavanda pastel */
+            background: #ddd6fe;
             color: #5b21b6;
             border: 1px solid #c084fc;
         }
@@ -130,110 +137,144 @@
             background: #fca5a5;
         }
         
-        #map {
-            height: calc(100vh - 120px);
-            width: 100%;
-            background: #f1f5f9;
-        }
-        
         .stats {
             background: #f1f5f9;
             padding: 6px 12px;
             border-radius: 6px;
-            font-size: 13px;
+            font-size: 12px;
             color: #475569;
             font-weight: 500;
+            text-align: center;
+        }
+        
+        /* Contenedor del mapa flexible */
+        #map {
+            flex: 1;
+            width: 100%;
+            background: #f1f5f9;
+            min-height: 350px;
         }
         
         .footer {
             background: #475569;
             color: #cbd5e1;
             text-align: center;
-            padding: 8px;
-            font-size: 12px;
-            position: fixed;
-            bottom: 0;
+            padding: 6px;
+            font-size: 11px;
             width: 100%;
-            z-index: 1000;
         }
         
         .info-popup {
-            font-size: 13px;
-            line-height: 1.5;
+            font-size: 12px;
+            line-height: 1.4;
             color: #334155;
+            max-width: 220px;
         }
         
         .info-popup h3 {
             color: #475569;
-            font-size: 14px;
-            margin-bottom: 6px;
+            font-size: 13px;
+            margin-bottom: 4px;
             border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 4px;
+            padding-bottom: 2px;
         }
 
         .legend {
             background: white;
-            padding: 12px;
-            line-height: 18px;
+            padding: 8px 10px;
+            line-height: 16px;
             color: #334155;
             border-radius: 8px;
             box-shadow: 0 1px 5px rgba(0,0,0,0.15);
-            font-size: 11px;
-            max-height: 300px;
+            font-size: 10px;
+            max-height: 200px;
             overflow-y: auto;
         }
         
         .legend h4 {
-            margin: 6px 0 4px 0;
+            margin: 4px 0 2px 0;
             color: #475569;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 2px;
+            padding-bottom: 1px;
         }
         .legend h4:first-child { margin-top: 0; }
         
         .legend p {
             display: flex;
             align-items: center;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
 
         .legend i {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             float: left;
-            margin-right: 8px;
+            margin-right: 6px;
             opacity: 0.9;
-            border: 1.5px solid #475569;
+            border: 1px solid #475569;
         }
         
         .legend i.circulo { border-radius: 50%; }
         .legend i.cuadrado { border-radius: 0%; }
 
         .leaflet-control-layers {
-            border-radius: 8px !important;
-            box-shadow: 0 1px 5px rgba(0,0,0,0.15) !important;
-            font-family: inherit;
-            font-size: 12px;
-            color: #334155;
-            padding: 6px 10px !important;
+            border-radius: 6px !important;
+            font-size: 11px;
+            padding: 4px 8px !important;
         }
 
-        @media (max-width: 1024px) {
+        /* 📱 MEDIA QUERIES: REGLAS ESPECÍFICAS PARA CELULARES Y TABLETS */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 16px;
+            }
+
             .controls {
-                flex-direction: column;
-                align-items: stretch;
+                padding: 10px;
+                gap: 8px;
             }
+
+            /* Los selectores se agrupan ordenadamente ocupando la mitad del ancho */
             .filter-group {
+                width: calc(50% - 4px);
                 flex-direction: column;
-                align-items: stretch;
+                align-items: flex-start;
+                gap: 2px;
             }
+
+            .filter-group label {
+                font-size: 11px;
+            }
+
             .controls select {
                 width: 100%;
+                min-width: unset;
+                padding: 8px; /* Más cómodo para tocar con el dedo */
+                font-size: 13px;
             }
-            #map {
-                height: calc(100vh - 380px);
+
+            /* Los botones ocupan todo el ancho para evitar amontonamientos */
+            .controls button {
+                width: 100%;
+                padding: 10px;
+                font-size: 13px;
+            }
+
+            .stats {
+                width: 100%;
+                order: -1; /* Mueve el contador al inicio de la barra en móviles */
+                margin-bottom: 2px;
+            }
+
+            /* Ajuste de controles nativos de Leaflet en móvil para que no estorben */
+            .leaflet-top, .leaflet-bottom {
+                zoom: 0.9;
+            }
+            
+            .legend {
+                max-width: 160px;
             }
         }
     </style>
@@ -245,6 +286,8 @@
     </div>
     
     <div class="controls">
+        <span class="stats" id="contador">0 elementos encontrados</span>
+
         <div class="filter-group">
             <label for="provincia">Provincia:</label>
             <select id="provincia"><option value="TODAS">Todas</option></select>
@@ -270,13 +313,9 @@
         </div>
 
         <button id="btnBuffer" class="btn-buffer" onclick="toggleBuffer()">⭕ Mostrar Cobertura Dinámica</button>
-        
         <button class="btn-export-cobertura" onclick="exportarColegiosSinCoberturaCSV()">📥 Fuera de Cobertura (CSV)</button>
-        
         <button class="btn-export-infra" onclick="exportarTodosLosColegiosFiltradosCSV()">📊 Exportar Todo por Filtro (CSV)</button>
-        
         <button class="btn-reset" onclick="resetMap()">🔄 Resetear Filtros</button>
-        <span class="stats" id="contador">0 elementos encontrados</span>
     </div>
     
     <div id="map"></div>
@@ -311,22 +350,22 @@
             "⭕ Zonas de Cobertura": bufferLayer,
             "🏫 Centros Educativos": colegiosLayer
         };
-        L.control.layers(null, overlayMaps, { collapsed: false, position: 'topright' }).addTo(map);
+        L.control.layers(null, overlayMaps, { collapsed: true, position: 'topright' }).addTo(map);
 
         const legend = L.control({ position: 'bottomright' });
         legend.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'legend');
             div.innerHTML = `
                 <h4>Torres (Altura)</h4>
-                <p><i class="circulo" style="background: #a7f3d0"></i> < 50 m (Radio: 3km)</p>
-                <p><i class="circulo" style="background: #fde68a"></i> 50 m — 100 m (Radio: 5km)</p>
-                <p><i class="circulo" style="background: #fca5a5"></i> > 100 m (Radio: 8km)</p>
+                <p><i class="circulo" style="background: #a7f3d0"></i> < 50 m (3km)</p>
+                <p><i class="circulo" style="background: #fde68a"></i> 50m-100m (5km)</p>
+                <p><i class="circulo" style="background: #fca5a5"></i> > 100 m (8km)</p>
                 
                 <h4>Colegios (Nivel)</h4>
-                <p><i class="cuadrado" style="background: #c084fc"></i> Primaria / Básica</p>
-                <p><i class="cuadrado" style="background: #60a5fa"></i> Premedia / Media</p>
-                <p><i class="cuadrado" style="background: #f472b6"></i> Telebásica / Multifase</p>
-                <p><i class="cuadrado" style="background: #94a3b8"></i> Otros / No Especificado</p>
+                <p><i class="cuadrado" style="background: #c084fc"></i> Primaria</p>
+                <p><i class="cuadrado" style="background: #60a5fa"></i> Premedia/Media</p>
+                <p><i class="cuadrado" style="background: #f472b6"></i> Telebásica</p>
+                <p><i class="cuadrado" style="background: #94a3b8"></i> Otros</p>
             `;
             return div;
         };
@@ -338,7 +377,6 @@
         const selectEnergia = document.getElementById('energia');
         const btnBuffer = document.getElementById('btnBuffer');
 
-        // Cabeceras fijas reutilizables para el CSV
         const csvHeaders = [
             "Latitud", "Longitud", "Escuela", "Nivel_Esc", "Matricula", 
             "S_Internet", "A_Banda", "Serv_Exist", "F_Energia", "Tipo_Acces", 
@@ -363,7 +401,6 @@
                 }
 
                 if (torresData.length === 0 && colegiosData.length === 0) {
-                    console.warn('Cargando sets de datos de respaldo locales.');
                     cargarMocksEjemplo();
                 }
 
@@ -460,10 +497,10 @@
                 if (altura > 100) iconColor = '#fca5a5';
 
                 const marker = L.circleMarker([lat, lon], {
-                    radius: 6.5,
+                    radius: 6,
                     fillColor: iconColor,
                     color: '#475569',
-                    weight: 1.5,
+                    weight: 1.2,
                     opacity: 0.9,
                     fillOpacity: 1
                 }).bindPopup(crearPopupTorre(feature.properties));
@@ -480,7 +517,7 @@
                         color: '#3b82f6',      
                         weight: 1,
                         fillColor: '#93c5fd',  
-                        fillOpacity: 0.15,
+                        fillOpacity: 0.12,
                         interactive: false     
                     });
                     bufferLayer.addLayer(buffer);
@@ -509,8 +546,8 @@
 
                 const squareIcon = L.divIcon({
                     className: 'custom-square-icon',
-                    html: `<div style="width:11px; height:11px; background-color:${escolarColor}; border:1.5px solid #1e293b; opacity:0.95;"></div>`,
-                    iconSize: [11, 11],
+                    html: `<div style="width:10px; height:10px; background-color:${escolarColor}; border:1px solid #1e293b; opacity:0.95;"></div>`,
+                    iconSize: [10, 10],
                     iconAnchor: [5, 5]
                 });
                 
@@ -520,11 +557,11 @@
                 colegiosLayer.addLayer(markerCuadrado);
             });
 
-            document.getElementById('contador').textContent = `${torresFiltradasGlobal.length} torres | ${colegiosFiltradosGlobal.length} colegios en zona`;
+            document.getElementById('contador').textContent = `${torresFiltradasGlobal.length} torres | ${colegiosFiltradosGlobal.length} escuelas`;
 
             if ((torresFiltradasGlobal.length + colegiosFiltradosGlobal.length) > 0 && (pSel !== 'TODAS' || dSel !== 'TODOS')) {
                 const totalGroup = L.featureGroup([...markersLayer.getLayers(), ...colegiosLayer.getLayers()]);
-                map.fitBounds(totalGroup.getBounds(), { padding: [40, 40], maxZoom: 14 });
+                map.fitBounds(totalGroup.getBounds(), { padding: [20, 20], maxZoom: 14 });
             }
         }
 
@@ -543,10 +580,9 @@
             return R * c;
         }
 
-        // 📥 BOTÓN 1: EXPORTAR SOLO LOS QUE ESTÁN FUERA DE COBERTURA
         function exportarColegiosSinCoberturaCSV() {
             if (colegiosFiltradosGlobal.length === 0) {
-                alert("No hay colegios que cumplan con los filtros actuales para ser analizados.");
+                alert("No hay colegios que cumplan con los filtros actuales.");
                 return;
             }
 
@@ -575,24 +611,21 @@
             });
 
             if (colegiosSinCobertura.length === 0) {
-                alert("Todos los colegios bajo los criterios actuales cuentan con cobertura de antenas.");
+                alert("Todos los colegios bajo los criterios actuales cuentan con cobertura.");
                 return;
             }
 
             descargarCSVProcesado(colegiosSinCobertura, "sin_cobertura");
         }
 
-        // 📊 BOTÓN 2: NUEVA FUNCIÓN PARA EXPORTAR TODO LO QUE SE VE EN PANTALLA (CON O SIN COBERTURA)
         function exportarTodosLosColegiosFiltradosCSV() {
             if (colegiosFiltradosGlobal.length === 0) {
-                alert("No hay colegios en la pantalla para exportar bajo los filtros actuales.");
+                alert("No hay colegios en la pantalla para exportar.");
                 return;
             }
-            // Descarga de manera directa la lista global filtrada
             descargarCSVProcesado(colegiosFiltradosGlobal, "reporte_general");
         }
 
-        // Función interna unificada para generar el archivo de descarga CSV
         function descargarCSVProcesado(listaColegios, prefijoNombre) {
             const csvRows = [];
             csvRows.push(csvHeaders.join(",")); 
@@ -658,7 +691,7 @@
                 if (!map.hasLayer(bufferLayer)) map.addLayer(bufferLayer);
             } else {
                 btnBuffer.classList.remove('active');
-                btnBuffer.textContent = '⭕ Mostrar Cobertura Dinámica';
+                btnBuffer.textContent = '⭕ Mostrar Coberturas';
             }
             filtrarYRenderizar();
         }
@@ -670,9 +703,6 @@
                     <p><strong>Operador:</strong> ${props.Operador || 'N/D'}</p>
                     <p><strong>Estructura:</strong> ${props.Estructura || 'N/D'}</p>
                     <p><strong>Altura:</strong> ${props['Altura (m)'] ? props['Altura (m)'] + ' m' : 'No reg.'}</p>
-                    <p style="margin-top:4px; font-size:11px; color:#64748b;">
-                        ${props.PROV_NOMB || ''} › ${props.DIST_NOMB || ''} › ${props.CORR_NOMB || ''}
-                    </p>
                 </div>
             `;
         }
@@ -680,15 +710,11 @@
         function crearPopupColegio(props) {
             return `
                 <div class="info-popup">
-                    <h3 style="border-bottom: 1px solid #c084fc;">🏫 ${props.Escuela || 'Centro Educativo'}</h3>
-                    <p><strong>Nivel Escolar:</strong> ${props.Nivel_Esc || 'N/D'}</p>
+                    <h3>🏫 ${props.Escuela || 'Centro Educativo'}</h3>
+                    <p><strong>Nivel:</strong> ${props.Nivel_Esc || 'N/D'}</p>
                     <p><strong>Matrícula:</strong> ${props.Matricula || 'N/D'}</p>
-                    <p><strong>¿Tiene Internet?:</strong> ${props.S_Internet || 'N/D'}</p>
-                    <p><strong>Ancho de Banda:</strong> ${props.A_Banda || 'N/D'}</p>
-                    <p><strong>Fluido Eléctrico:</strong> ${props.F_Energia || 'N/D'}</p>
-                    <p style="margin-top:4px; font-size:11px; color:#64748b;">
-                        ${props.PROV_NOMB || ''} › ${props.DIST_NOMB || ''} › ${props.CORR_NOMB || ''}
-                    </p>
+                    <p><strong>Internet:</strong> ${props.S_Internet || 'N/D'}</p>
+                    <p><strong>Electricidad:</strong> ${props.F_Energia || 'N/D'}</p>
                 </div>
             `;
         }
@@ -703,7 +729,7 @@
             
             mostrarBufferActivo = false;
             btnBuffer.classList.remove('active');
-            btnBuffer.textContent = '⭕ Mostrar Cobertura Dinámica';
+            btnBuffer.textContent = '⭕ Mostrar Coberturas';
             
             if (!map.hasLayer(markersLayer)) map.addLayer(markersLayer);
             if (!map.hasLayer(colegiosLayer)) map.addLayer(colegiosLayer);
@@ -714,14 +740,10 @@
 
         function cargarMocksEjemplo() {
             torresData = [
-                { "type": "Feature", "properties": { "Operador": "Más Móvil", "Sitio Tran": "Torre Central San Francisco", "Estructura": "Monopolo", "Altura (m)": 45, "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5193, 8.9823] } },
-                { "type": "Feature", "properties": { "Operador": "Tigo", "Sitio Tran": "Nodo Bella Vista", "Estructura": "Autosoportada", "Altura (m)": 75, "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "Bella Vista" }, "geometry": { "type": "Point", "coordinates": [-79.5270, 8.9870] } }
+                { "type": "Feature", "properties": { "Operador": "Más Móvil", "Sitio Tran": "Torre Central San Francisco", "Estructura": "Monopolo", "Altura (m)": 45, "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5193, 8.9823] } }
             ];
-            
             colegiosData = [
-                { "type": "Feature", "properties": { "Escuela": "Escuela Belisario Porras", "Nivel_Esc": "Primaria", "Matricula": "450 alumnos", "S_Internet": "SI", "A_Banda": "20 Mbps", "F_Energia": "SI", "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5150, 8.9840] } },
-                { "type": "Feature", "properties": { "Escuela": "Colegio Richard Neumann", "Nivel_Esc": "Premedia / Media", "Matricula": "890 alumnos", "S_Internet": "NO", "A_Banda": "Sin servicio", "F_Energia": "SI", "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "Bella Vista" }, "geometry": { "type": "Point", "coordinates": [-79.5290, 8.9890] } },
-                { "type": "Feature", "properties": { "Escuela": "Escuela Rural Desconectada", "Nivel_Esc": "Primaria", "Matricula": "45 alumnos", "S_Internet": "NO", "A_Banda": "Sin servicio", "F_Energia": "NO", "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "Pacora" }, "geometry": { "type": "Point", "coordinates": [-79.2800, 9.0800] } }
+                { "type": "Feature", "properties": { "Escuela": "Escuela Belisario Porras", "Nivel_Esc": "Primaria", "Matricula": "450 alumnos", "S_Internet": "SI", "A_Banda": "20 Mbps", "F_Energia": "SI", "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5150, 8.9840] } }
             ]
         }
 
