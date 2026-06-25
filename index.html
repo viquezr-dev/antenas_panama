@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
+    <script src="https://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -27,48 +29,48 @@
         .header {
             background: #475569;
             color: #f8fafc;
-            padding: 12px 15px;
+            padding: 14px 20px;
             text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .header h1 {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: 500;
             letter-spacing: 0.5px;
         }
         
         .controls {
             background: white;
-            padding: 12px;
+            padding: 14px;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
             border-bottom: 1px solid #e2e8f0;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
         .filter-group {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         .controls label {
-            font-weight: 500;
-            color: #64748b;
+            font-weight: 600;
+            color: #475569;
             font-size: 13px;
             white-space: nowrap;
         }
         
         .controls select {
-            padding: 6px 10px;
+            padding: 6px 12px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 13px;
-            min-width: 130px;
+            min-width: 150px;
             background: #f8fafc;
             color: #334155;
             cursor: pointer;
@@ -77,12 +79,13 @@
         
         .controls select:focus {
             outline: none;
-            border-color: #94a3b8;
+            border-color: #3b82f6;
             background: white;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
         }
         
         .controls button {
-            padding: 8px 14px;
+            padding: 8px 16px;
             border: none;
             border-radius: 6px;
             font-size: 13px;
@@ -92,6 +95,11 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+        }
+        
+        .controls button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
         
         .btn-buffer {
@@ -116,7 +124,7 @@
             background: #f43f5e;
             color: white;
             border-color: #e11d48;
-            box-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
+            box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
         }
 
         .btn-export-cobertura {
@@ -125,19 +133,10 @@
             border: 1px solid #7dd3fc;
         }
 
-        .btn-export-cobertura:hover {
-            background: #7dd3fc;
-        }
-
         .btn-export-infra {
             background: #ddd6fe;
             color: #5b21b6;
             border: 1px solid #c084fc;
-        }
-
-        .btn-export-infra:hover {
-            background: #c084fc;
-            color: white;
         }
 
         .btn-reset {
@@ -145,114 +144,108 @@
             color: #991b1b;
         }
         
-        .btn-reset:hover {
-            background: #fca5a5;
-        }
-        
         .stats {
             background: #f1f5f9;
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 6px;
-            font-size: 12px;
-            color: #475569;
-            font-weight: 500;
-            text-align: center;
+            font-size: 13px;
+            color: #334155;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
         }
         
         #map {
             flex: 1;
             width: 100%;
             background: #f1f5f9;
-            min-height: 350px;
         }
         
         .footer {
             background: #475569;
             color: #cbd5e1;
             text-align: center;
-            padding: 6px;
-            font-size: 11px;
+            padding: 8px;
+            font-size: 12px;
             width: 100%;
+            border-top: 1px solid #334155;
         }
         
         .info-popup {
-            font-size: 12px;
-            line-height: 1.4;
+            font-size: 13px;
+            line-height: 1.5;
             color: #334155;
-            max-width: 220px;
+            min-width: 200px;
         }
         
         .info-popup h3 {
-            color: #475569;
-            font-size: 13px;
-            margin-bottom: 4px;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 2px;
+            color: #1e293b;
+            font-size: 14px;
+            margin-bottom: 6px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 4px;
         }
 
         .legend {
             background: white;
-            padding: 8px 10px;
-            line-height: 16px;
+            padding: 12px;
+            line-height: 18px;
             color: #334155;
             border-radius: 8px;
-            box-shadow: 0 1px 5px rgba(0,0,0,0.15);
-            font-size: 10px;
-            max-height: 200px;
-            overflow-y: auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            font-size: 12px;
+            max-width: 240px;
         }
         
         .legend h4 {
-            margin: 4px 0 2px 0;
+            margin: 6px 0 4px 0;
             color: #475569;
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 12px;
+            font-weight: 700;
             border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 1px;
+            padding-bottom: 2px;
         }
         .legend h4:first-child { margin-top: 0; }
         
         .legend p {
             display: flex;
             align-items: center;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
         }
 
         .legend i {
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             float: left;
-            margin-right: 6px;
+            margin-right: 8px;
             opacity: 0.9;
             border: 1px solid #475569;
         }
         
         .legend i.circulo { border-radius: 50%; }
         .legend i.cuadrado { border-radius: 0%; }
-
-        .leaflet-control-layers {
-            border-radius: 6px !important;
-            font-size: 11px;
-            padding: 4px 8px !important;
+        
+        /* Barra de espectro para la escala térmica web */
+        .thermal-bar {
+            width: 100%;
+            height: 10px;
+            background: linear-gradient(to right, blue, cyan, lime, yellow, red);
+            border-radius: 3px;
+            margin-bottom: 4px;
+            border: 1px solid #cbd5e1;
         }
-
-        @media (max-width: 768px) {
-            .header h1 { font-size: 16px; }
-            .controls { padding: 10px; gap: 8px; }
-            .filter-group { width: calc(50% - 4px); flex-direction: column; align-items: flex-start; gap: 2px; }
-            .filter-group label { font-size: 11px; }
-            .controls select { width: 100%; min-width: unset; padding: 8px; font-size: 13px; }
-            .controls button { width: 100%; padding: 10px; font-size: 13px; }
-            .stats { width: 100%; order: -1; margin-bottom: 2px; }
-            .leaflet-top, .leaflet-bottom { zoom: 0.9; }
-            .legend { max-width: 160px; }
+        .thermal-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #64748b;
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>📡 Infraestructura y Centros Educativos de Panamá</h1>
+        <h1>📡 Infraestructura y Centros Educativos de Panamá (Plataforma Web)</h1>
     </div>
     
     <div class="controls">
@@ -292,7 +285,7 @@
     <div id="map"></div>
     
     <div class="footer">
-        Desarrollado por Raul Viquez | © 2026 Integración de Datos Territoriales
+        Desarrollado por Raul Viquez | © 2026 Integración de Datos Territoriales Web
     </div>
 
     <script>
@@ -303,7 +296,7 @@
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            opacity: 0.75
+            opacity: 0.85
         }).addTo(map);
 
         let torresData = [];
@@ -313,18 +306,13 @@
         let mostrarBufferActivo = false;
         let mostrarHeatmapActivo = false; 
 
+        // Capas lógicas
         const markersLayer = L.layerGroup().addTo(map); 
         const bufferLayer = L.layerGroup().addTo(map);  
         const colegiosLayer = L.layerGroup().addTo(map); 
-        const heatmapLayer = L.layerGroup().addTo(map); 
-
-        const overlayMaps = {
-            "📡 Torres de Telecomunicación": markersLayer,
-            "⭕ Zonas de Cobertura": bufferLayer,
-            "🏫 Centros Educativos": colegiosLayer,
-            "🔥 Densidad Sin Energía": heatmapLayer
-        };
-        L.control.layers(null, overlayMaps, { collapsed: true, position: 'topright' }).addTo(map);
+        
+        // Instancia global de la capa de calor avanzada Leaflet.heat
+        let heatLayerInstance = null;
 
         const legend = L.control({ position: 'bottomright' });
         legend.onAdd = function (map) {
@@ -339,10 +327,14 @@
                 <p><i class="cuadrado" style="background: #c084fc"></i> Primaria</p>
                 <p><i class="cuadrado" style="background: #60a5fa"></i> Premedia/Media</p>
                 <p><i class="cuadrado" style="background: #f472b6"></i> Telebásica</p>
-                <p><i class="cuadrado" style="background: #94a3b8"></i> Otros</p>
-
-                <h4>Concentración</h4>
-                <p><i class="circulo" style="background: #ef4444; opacity: 0.4; border:none;"></i> Zona Sin Luz</p>
+                
+                <h4>Densidad de Escuelas Sin Luz</h4>
+                <div class="thermal-bar"></div>
+                <div class="thermal-labels">
+                    <span>Baja</span>
+                    <span>Media</span>
+                    <span>Crítica</span>
+                </div>
             `;
             return div;
         };
@@ -369,24 +361,16 @@
                     fetch('colegios.geojson').catch(e => null)
                 ]);
 
-                if (resTorres && resTorres.ok) {
-                    const data = await resTorres.json();
-                    torresData = data.features;
-                }
-                if (resColegios && resColegios.ok) {
-                    const data = await resColegios.json();
-                    colegiosData = data.features;
-                }
+                if (resTorres && resTorres.ok) torresData = (await resTorres.json()).features;
+                if (resColegios && resColegios.ok) colegiosData = (await resColegios.json()).features;
 
-                if (torresData.length === 0 && colegiosData.length === 0) {
-                    cargarMocksEjemplo();
-                }
+                if (torresData.length === 0 && colegiosData.length === 0) cargarMocksEjemplo();
 
                 inicializarFiltrosCascada();
                 selectEnergia.addEventListener('change', filtrarYRenderizar);
                 filtrarYRenderizar();
             } catch (error) {
-                console.error('Error inicializando el mapa:', error);
+                console.error('Error inicializando mapa web:', error);
             }
         }
 
@@ -451,13 +435,19 @@
             markersLayer.clearLayers();
             bufferLayer.clearLayers();
             colegiosLayer.clearLayers();
-            heatmapLayer.clearLayers(); 
+            
+            // Si la capa térmica web existe en el mapa, la removemos temporalmente para recalcular
+            if (heatLayerInstance) {
+                map.removeLayer(heatLayerInstance);
+                heatLayerInstance = null;
+            }
 
             const pSel = selectProv.value;
             const dSel = selectDist.value;
             const cSel = selectCorr.value;
             const eSel = selectEnergia.value;
 
+            // 1. Filtrar Torres
             torresFiltradasGlobal = torresData.filter(f => {
                 if (pSel !== 'TODAS' && f.properties.PROV_NOMB !== pSel) return false;
                 if (dSel !== 'TODOS' && f.properties.DIST_NOMB !== dSel) return false;
@@ -484,10 +474,7 @@
                     fillOpacity: 1
                 }).bindPopup(crearPopupTorre(feature.properties));
                 
-                // CONTROL CONMUTADOR: Solo agregamos al mapa si el mapa de calor está apagado
-                if (!mostrarHeatmapActivo) {
-                    markersLayer.addLayer(marker);
-                }
+                if (!mostrarHeatmapActivo) markersLayer.addLayer(marker);
 
                 if (mostrarBufferActivo && !mostrarHeatmapActivo) {
                     let radioMetros = 5000;
@@ -496,28 +483,23 @@
                     else if (altura > 100) radioMetros = 8000;
 
                     const buffer = L.circle([lat, lon], {
-                        radius: radioMetros, 
-                        color: '#3b82f6',      
-                        weight: 1,
-                        fillColor: '#93c5fd',  
-                        fillOpacity: 0.12,
-                        interactive: false     
+                        radius: radioMetros, color: '#3b82f6', weight: 1, fillColor: '#93c5fd', fillOpacity: 0.12, interactive: false     
                     });
                     bufferLayer.addLayer(buffer);
                 }
             });
 
+            // 2. Filtrar Colegios
             colegiosFiltradosGlobal = colegiosData.filter(f => {
                 if (pSel !== 'TODAS' && f.properties.PROV_NOMB !== pSel) return false;
                 if (dSel !== 'TODOS' && f.properties.DIST_NOMB !== dSel) return false;
                 if (cSel !== 'TODOS' && f.properties.CORR_NOMB !== cSel) return false;
-                
-                if (eSel !== 'TODOS') {
-                    const energiaDato = (f.properties.F_Energia || '').toUpperCase().trim();
-                    if (energiaDato !== eSel) return false;
-                }
+                if (eSel !== 'TODOS' && (f.properties.F_Energia || '').toUpperCase().trim() !== eSel) return false;
                 return true;
             });
+
+            // Arreglo para acumular puntos del mapa de calor dinámico profesional
+            const puntosCalor = [];
 
             colegiosFiltradosGlobal.forEach(feature => {
                 let lat = feature.geometry?.coordinates[1] || parseFloat(feature.properties.Latitud);
@@ -526,68 +508,82 @@
 
                 const energiaDato = (feature.properties.F_Energia || '').toUpperCase().trim();
 
+                // Si está el mapa de calor encendido y la escuela no tiene luz, la sumamos a la matriz térmica
                 if (mostrarHeatmapActivo && energiaDato === 'NO') {
-                    const heatNode = L.circle([lat, lon], {
-                        radius: 6000, 
-                        color: 'transparent',
-                        fillColor: '#ef4444', 
-                        fillOpacity: 0.16,    
-                        interactive: false
-                    });
-                    heatmapLayer.addLayer(heatNode);
+                    // Estructura de Leaflet.heat: [lat, lon, intensidad]
+                    puntosCalor.push([lat, lon, 1.0]); 
                 }
 
                 const nivel = feature.properties.Nivel_Esc || '';
                 const escolarColor = obtenerColorColegio(nivel);
-
                 const squareIcon = L.divIcon({
                     className: 'custom-square-icon',
                     html: `<div style="width:10px; height:10px; background-color:${escolarColor}; border:1px solid #1e293b; opacity:0.95;"></div>`,
-                    iconSize: [10, 10],
-                    iconAnchor: [5, 5]
+                    iconSize: [10, 10], iconAnchor: [5, 5]
                 });
                 
-                const markerCuadrado = L.marker([lat, lon], { icon: squareIcon })
-                    .bindPopup(crearPopupColegio(feature.properties));
+                const markerCuadrado = L.marker([lat, lon], { icon: squareIcon }).bindPopup(crearPopupColegio(feature.properties));
 
-                // CONTROL CONMUTADOR: Si el calor está encendido, ocultamos los cuadritos individuales
-                if (!mostrarHeatmapActivo) {
-                    colegiosLayer.addLayer(markerCuadrado);
-                }
+                if (!mostrarHeatmapActivo) colegiosLayer.addLayer(markerCuadrado);
             });
+
+            // 🔥 CONFIGURACIÓN DE RENDERS TÉRMICOS PARA NAVEGADORES WEB
+            if (mostrarHeatmapActivo && puntosCalor.length > 0) {
+                heatLayerInstance = L.heatLayer(puntosCalor, {
+                    radius: 25,          // Radio de difuminado óptimo para pantallas de escritorio
+                    blur: 20,            // Suavizado del espectro de calor
+                    maxZoom: 13,         // Zoom donde la intensidad se estabiliza al 100%
+                    gradient: {          // Espectro de color profesional
+                        0.2: 'blue', 
+                        0.4: 'cyan', 
+                        0.6: 'lime', 
+                        0.8: 'yellow', 
+                        1.0: 'red'
+                    }
+                }).addTo(map);
+            }
 
             document.getElementById('contador').textContent = `${torresFiltradasGlobal.length} torres | ${colegiosFiltradosGlobal.length} escuelas`;
 
+            // Encuadre inteligente automático
             if ((torresFiltradasGlobal.length + colegiosFiltradosGlobal.length) > 0 && (pSel !== 'TODAS' || dSel !== 'TODOS')) {
-                // Si el heatmap está solo, usamos sus capas para encuadrar la vista de Leaflet
-                const layerReference = mostrarHeatmapActivo ? heatmapLayer : colegiosLayer;
-                if(layerReference.getLayers().length > 0) {
-                    map.fitBounds(layerReference.getBounds(), { padding: [20, 20], maxZoom: 14 });
+                if(!mostrarHeatmapActivo && colegiosLayer.getLayers().length > 0) {
+                    map.fitBounds(colegiosLayer.getBounds(), { padding: [40, 40] });
                 }
             }
         }
 
-        // LÓGICA DE CONTROL AUTOMÁTICO DE CAPAS
+        // LÓGICA DE CONMUTACIÓN DE CAPAS AVANZADA
         function toggleHeatmap() {
             mostrarHeatmapActivo = !mostrarHeatmapActivo;
             if (mostrarHeatmapActivo) {
                 btnHeat.classList.add('active');
                 btnHeat.textContent = '🔥 Ocultar Calor';
                 
-                // Forzamos la remoción visual de las capas base operativas
                 if (map.hasLayer(markersLayer)) map.removeLayer(markersLayer);
                 if (map.hasLayer(bufferLayer)) map.removeLayer(bufferLayer);
                 if (map.hasLayer(colegiosLayer)) map.removeLayer(colegiosLayer);
-                if (!map.hasLayer(heatmapLayer)) map.addLayer(heatmapLayer);
             } else {
                 btnHeat.classList.remove('active');
                 btnHeat.textContent = '🔥 Mapa de Calor (Sin Luz)';
                 
-                // Restablecemos el estado inicial devolviendo las capas automáticas
                 if (!map.hasLayer(markersLayer)) map.addLayer(markersLayer);
                 if (!map.hasLayer(colegiosLayer)) map.addLayer(colegiosLayer);
                 if (mostrarBufferActivo && !map.hasLayer(bufferLayer)) map.addLayer(bufferLayer);
-                if (map.hasLayer(heatmapLayer)) map.removeLayer(heatmapLayer);
+            }
+            filtrarYRenderizar();
+        }
+
+        function toggleBuffer() {
+            mostrarBufferActivo = !mostrarBufferActivo;
+            if (mostrarBufferActivo) {
+                btnBuffer.classList.add('active');
+                btnBuffer.textContent = '⭕ Ocultar Coberturas';
+                if (!mostrarHeatmapActivo && !map.hasLayer(bufferLayer)) map.addLayer(bufferLayer);
+            } else {
+                btnBuffer.classList.remove('active');
+                btnBuffer.textContent = '⭕ Mostrar Coberturas';
+                if (map.hasLayer(bufferLayer)) map.removeLayer(bufferLayer);
             }
             filtrarYRenderizar();
         }
@@ -598,13 +594,9 @@
             const phi2 = lat2 * Math.PI / 180;
             const deltaPhi = (lat2 - lat1) * Math.PI / 180;
             const deltaLambda = (lon2 - lon1) * Math.PI / 180;
-
             const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-                      Math.cos(phi1) * Math.cos(phi2) *
-                      Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-            return R * c;
+                      Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
         }
 
         function exportarColegiosSinCoberturaCSV() {
@@ -612,36 +604,27 @@
                 alert("No hay colegios que cumplan con los filtros actuales.");
                 return;
             }
-
             const colegiosSinCobertura = colegiosFiltradosGlobal.filter(colegio => {
                 let cLat = colegio.geometry?.coordinates[1] || parseFloat(colegio.properties.Latitud);
                 let cLon = colegio.geometry?.coordinates[0] || parseFloat(colegio.properties.Longitud);
-                
                 if (isNaN(cLat) || isNaN(cLon)) return false;
-
                 const estaCubierto = torresData.some(torre => {
                     let tLat = torre.geometry?.coordinates[1] || parseFloat(torre.properties.Lat_Dec);
                     let tLon = torre.geometry?.coordinates[0] || parseFloat(torre.properties.Lon_Dec);
                     if (isNaN(tLat) || isNaN(tLon)) return false;
-
                     const altura = torre.properties['Altura (m)'] || 0;
                     let radioTorre = 5000;
                     if (altura > 0 && altura <= 50) radioTorre = 3000;
                     else if (altura > 50 && altura <= 100) radioTorre = 5000;
                     else if (altura > 100) radioTorre = 8000;
-
-                    const distancia = calcularDistanciaMetros(cLat, cLon, tLat, tLon);
-                    return distancia <= radioTorre;
+                    return calcularDistanciaMetros(cLat, cLon, tLat, tLon) <= radioTorre;
                 });
-
                 return !estaCubierto;
             });
-
             if (colegiosSinCobertura.length === 0) {
                 alert("Todos los colegios bajo los criterios actuales cuentan con cobertura.");
                 return;
             }
-
             descargarCSVProcesado(colegiosSinCobertura, "sin_cobertura");
         }
 
@@ -654,47 +637,25 @@
         }
 
         function descargarCSVProcesado(listaColegios, prefijoNombre) {
-            const csvRows = [];
-            csvRows.push(csvHeaders.join(",")); 
-
+            const csvRows = [csvHeaders.join(",")]; 
             listaColegios.forEach(colegio => {
                 let lat = colegio.geometry?.coordinates[1] || colegio.properties.Latitud;
                 let lon = colegio.geometry?.coordinates[0] || colegio.properties.Longitud;
                 const props = colegio.properties;
-
                 const values = [
-                    lat,
-                    lon,
-                    escapeCSVValue(props.Escuela),
-                    escapeCSVValue(props.Nivel_Esc),
-                    escapeCSVValue(props.Matricula),
-                    escapeCSVValue(props.S_Internet),
-                    escapeCSVValue(props.A_Banda),
-                    escapeCSVValue(props.Serv_Exist),
-                    escapeCSVValue(props.F_Energia),
-                    escapeCSVValue(props.Tipo_Acces),
-                    escapeCSVValue(props.T_Ofertada),
-                    escapeCSVValue(props.V_Ofertada),
-                    escapeCSVValue(props.PROV_ID),
-                    escapeCSVValue(props.PROV_NOMB),
-                    escapeCSVValue(props.DIST_ID),
-                    escapeCSVValue(props.DIST_NOMB),
-                    escapeCSVValue(props.CORR_ID),
-                    escapeCSVValue(props.CORR_NOMB)
+                    lat, lon, escapeCSVValue(props.Escuela), escapeCSVValue(props.Nivel_Esc), escapeCSVValue(props.Matricula),
+                    escapeCSVValue(props.S_Internet), escapeCSVValue(props.A_Banda), escapeCSVValue(props.Serv_Exist),
+                    escapeCSVValue(props.F_Energia), escapeCSVValue(props.Tipo_Acces), escapeCSVValue(props.T_Ofertada),
+                    escapeCSVValue(props.V_Ofertada), escapeCSVValue(props.PROV_ID), escapeCSVValue(props.PROV_NOMB),
+                    escapeCSVValue(props.DIST_ID), escapeCSVValue(props.DIST_NOMB), escapeCSVValue(props.CORR_ID), escapeCSVValue(props.CORR_NOMB)
                 ];
                 csvRows.push(values.join(","));
             });
-
-            const csvContent = "\uFEFF" + csvRows.join("\n");
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob(["\uFEFF" + csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const downloadAnchor = document.createElement('a');
-            
-            const provName = selectProv.value.toLowerCase().replace(/ /g, "_");
-            const elecState = selectEnergia.value.toLowerCase();
-            
             downloadAnchor.setAttribute("href", url);
-            downloadAnchor.setAttribute("download", `colegios_${prefijoNombre}_${provName}_energia_${elecState}.csv`);
+            downloadAnchor.setAttribute("download", `colegios_${prefijoNombre}.csv`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             document.body.removeChild(downloadAnchor);
@@ -704,47 +665,17 @@
             if (val === undefined || val === null) return "";
             let stringValue = String(val).trim();
             if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-                stringValue = stringValue.replace(/"/g, '""');
-                return `"${stringValue}"`;
+                return `"${stringValue.replace(/"/g, '""')}"`;
             }
             return stringValue;
         }
 
-        function toggleBuffer() {
-            mostrarBufferActivo = !mostrarBufferActivo;
-            if (mostrarBufferActivo) {
-                btnBuffer.classList.add('active');
-                btnBuffer.textContent = '⭕ Ocultar Coberturas';
-                // Solo lo añadimos al mapa directamente si no está el mapa de calor interfiriendo
-                if (!mostrarHeatmapActivo && !map.hasLayer(bufferLayer)) map.addLayer(bufferLayer);
-            } else {
-                btnBuffer.classList.remove('active');
-                btnBuffer.textContent = '⭕ Mostrar Coberturas';
-            }
-            filtrarYRenderizar();
-        }
-
         function crearPopupTorre(props) {
-            return `
-                <div class="info-popup">
-                    <h3>📡 ${props['Sitio Tran'] || 'Estación Base'}</h3>
-                    <p><strong>Operador:</strong> ${props.Operador || 'N/D'}</p>
-                    <p><strong>Estructura:</strong> ${props.Estructura || 'N/D'}</p>
-                    <p><strong>Altura:</strong> ${props['Altura (m)'] ? props['Altura (m)'] + ' m' : 'No reg.'}</p>
-                </div>
-            `;
+            return `<div class="info-popup"><h3>📡 ${props['Sitio Tran'] || 'Estación Base'}</h3><p><strong>Operador:</strong> ${props.Operador || 'N/D'}</p><p><strong>Estructura:</strong> ${props.Estructura || 'N/D'}</p><p><strong>Altura:</strong> ${props['Altura (m)'] ? props['Altura (m)'] + ' m' : 'No reg.'}</p></div>`;
         }
 
         function crearPopupColegio(props) {
-            return `
-                <div class="info-popup">
-                    <h3>🏫 ${props.Escuela || 'Centro Educativo'}</h3>
-                    <p><strong>Nivel:</strong> ${props.Nivel_Esc || 'N/D'}</p>
-                    <p><strong>Matrícula:</strong> ${props.Matricula || 'N/D'}</p>
-                    <p><strong>Internet:</strong> ${props.S_Internet || 'N/D'}</p>
-                    <p><strong>Electricidad:</strong> ${props.F_Energia || 'N/D'}</p>
-                </div>
-            `;
+            return `<div class="info-popup"><h3>🏫 ${props.Escuela || 'Centro Educativo'}</h3><p><strong>Nivel:</strong> ${props.Nivel_Esc || 'N/D'}</p><p><strong>Matrícula:</strong> ${props.Matricula || 'N/D'}</p><p><strong>Internet:</strong> ${props.S_Internet || 'N/D'}</p><p><strong>Electricidad:</strong> ${props.F_Energia || 'N/D'}</p></div>`;
         }
 
         function resetMap() {
@@ -754,7 +685,6 @@
             selectEnergia.value = 'TODOS';
             selectDist.disabled = true;
             selectCorr.disabled = true;
-            
             mostrarBufferActivo = false;
             mostrarHeatmapActivo = false;
             btnBuffer.classList.remove('active');
@@ -765,19 +695,18 @@
             if (!map.hasLayer(markersLayer)) map.addLayer(markersLayer);
             if (!map.hasLayer(colegiosLayer)) map.addLayer(colegiosLayer);
             if (map.hasLayer(bufferLayer)) map.removeLayer(bufferLayer);
-            if (map.hasLayer(heatmapLayer)) map.removeLayer(heatmapLayer);
             
             filtrarYRenderizar();
             map.setView([8.537, -80.782], 8);
         }
 
         function cargarMocksEjemplo() {
-            torresData = [
-                { "type": "Feature", "properties": { "Operador": "Más Móvil", "Sitio Tran": "Torre Central San Francisco", "Estructura": "Monopolo", "Altura (m)": 45, "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5193, 8.9823] } }
-            ];
+            torresData = [{ "type": "Feature", "properties": { "Operador": "Más Móvil", "Sitio Tran": "Torre Central Web", "Estructura": "Monopolo", "Altura (m)": 85, "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5193, 8.9823] } }];
             colegiosData = [
-                { "type": "Feature", "properties": { "Escuela": "Escuela Belisario Porras", "Nivel_Esc": "Primaria", "Matricula": "450 alumnos", "S_Internet": "SI", "A_Banda": "20 Mbps", "F_Energia": "NO", "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5150, 8.9840] } }
-            ]
+                { "type": "Feature", "properties": { "Escuela": "Centro Escolar 1", "Nivel_Esc": "Primaria", "Matricula": "500", "S_Internet": "NO", "F_Energia": "NO", "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5150, 8.9840] } },
+                { "type": "Feature", "properties": { "Escuela": "Centro Escolar 2", "Nivel_Esc": "Primaria", "Matricula": "200", "S_Internet": "NO", "F_Energia": "NO", "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5160, 8.9845] } },
+                { "type": "Feature", "properties": { "Escuela": "Centro Escolar 3", "Nivel_Esc": "Premedia", "Matricula": "350", "S_Internet": "NO", "F_Energia": "NO", "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5140, 8.9835] } }
+            ];
         }
 
         document.addEventListener('DOMContentLoaded', cargarDatos);
