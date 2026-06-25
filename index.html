@@ -38,7 +38,6 @@
             letter-spacing: 0.5px;
         }
         
-        /* Contenedor principal de controles optimizado */
         .controls {
             background: white;
             padding: 12px;
@@ -107,6 +106,20 @@
             border-color: #86efac;
         }
 
+        /* Estilo para el nuevo botón de mapa de calor */
+        .btn-heat {
+            background: #ffe4e6;
+            color: #9f1239;
+            border: 1px solid #fecdd3;
+        }
+
+        .btn-heat.active {
+            background: #f43f5e;
+            color: white;
+            border-color: #e11d48;
+            box-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
+        }
+
         .btn-export-cobertura {
             background: #bae6fd;
             color: #0369a1;
@@ -147,7 +160,6 @@
             text-align: center;
         }
         
-        /* Contenedor del mapa flexible */
         #map {
             flex: 1;
             width: 100%;
@@ -225,57 +237,16 @@
             padding: 4px 8px !important;
         }
 
-        /* 📱 MEDIA QUERIES: REGLAS ESPECÍFICAS PARA CELULARES Y TABLETS */
         @media (max-width: 768px) {
-            .header h1 {
-                font-size: 16px;
-            }
-
-            .controls {
-                padding: 10px;
-                gap: 8px;
-            }
-
-            /* Los selectores se agrupan ordenadamente ocupando la mitad del ancho */
-            .filter-group {
-                width: calc(50% - 4px);
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 2px;
-            }
-
-            .filter-group label {
-                font-size: 11px;
-            }
-
-            .controls select {
-                width: 100%;
-                min-width: unset;
-                padding: 8px; /* Más cómodo para tocar con el dedo */
-                font-size: 13px;
-            }
-
-            /* Los botones ocupan todo el ancho para evitar amontonamientos */
-            .controls button {
-                width: 100%;
-                padding: 10px;
-                font-size: 13px;
-            }
-
-            .stats {
-                width: 100%;
-                order: -1; /* Mueve el contador al inicio de la barra en móviles */
-                margin-bottom: 2px;
-            }
-
-            /* Ajuste de controles nativos de Leaflet en móvil para que no estorben */
-            .leaflet-top, .leaflet-bottom {
-                zoom: 0.9;
-            }
-            
-            .legend {
-                max-width: 160px;
-            }
+            .header h1 { font-size: 16px; }
+            .controls { padding: 10px; gap: 8px; }
+            .filter-group { width: calc(50% - 4px); flex-direction: column; align-items: flex-start; gap: 2px; }
+            .filter-group label { font-size: 11px; }
+            .controls select { width: 100%; min-width: unset; padding: 8px; font-size: 13px; }
+            .controls button { width: 100%; padding: 10px; font-size: 13px; }
+            .stats { width: 100%; order: -1; margin-bottom: 2px; }
+            .leaflet-top, .leaflet-bottom { zoom: 0.9; }
+            .legend { max-width: 160px; }
         }
     </style>
 </head>
@@ -313,6 +284,8 @@
         </div>
 
         <button id="btnBuffer" class="btn-buffer" onclick="toggleBuffer()">⭕ Mostrar Cobertura Dinámica</button>
+        <!-- NUEVO BOTÓN PARA EL MAPA DE CALOR -->
+        <button id="btnHeat" class="btn-heat" onclick="toggleHeatmap()">🔥 Mapa de Calor (Sin Luz)</button>
         <button class="btn-export-cobertura" onclick="exportarColegiosSinCoberturaCSV()">📥 Fuera de Cobertura (CSV)</button>
         <button class="btn-export-infra" onclick="exportarTodosLosColegiosFiltradosCSV()">📊 Exportar Todo por Filtro (CSV)</button>
         <button class="btn-reset" onclick="resetMap()">🔄 Resetear Filtros</button>
@@ -340,15 +313,18 @@
         let torresFiltradasGlobal = [];
         let colegiosFiltradosGlobal = [];
         let mostrarBufferActivo = false;
+        let mostrarHeatmapActivo = false; // Estado del mapa de calor
 
         const markersLayer = L.layerGroup().addTo(map); 
         const bufferLayer = L.layerGroup().addTo(map);  
         const colegiosLayer = L.layerGroup().addTo(map); 
+        const heatmapLayer = L.layerGroup().addTo(map); // Capa nativa para simular calor
 
         const overlayMaps = {
             "📡 Torres de Telecomunicación": markersLayer,
             "⭕ Zonas de Cobertura": bufferLayer,
-            "🏫 Centros Educativos": colegiosLayer
+            "🏫 Centros Educativos": colegiosLayer,
+            "🔥 Densidad Sin Energía": heatmapLayer
         };
         L.control.layers(null, overlayMaps, { collapsed: true, position: 'topright' }).addTo(map);
 
@@ -366,6 +342,9 @@
                 <p><i class="cuadrado" style="background: #60a5fa"></i> Premedia/Media</p>
                 <p><i class="cuadrado" style="background: #f472b6"></i> Telebásica</p>
                 <p><i class="cuadrado" style="background: #94a3b8"></i> Otros</p>
+
+                <h4>Concentración</h4>
+                <p><i class="circulo" style="background: #ef4444; opacity: 0.4; border:none;"></i> Zona Sin Luz</p>
             `;
             return div;
         };
@@ -376,6 +355,7 @@
         const selectCorr = document.getElementById('corregimiento');
         const selectEnergia = document.getElementById('energia');
         const btnBuffer = document.getElementById('btnBuffer');
+        const btnHeat = document.getElementById('btnHeat');
 
         const csvHeaders = [
             "Latitud", "Longitud", "Escuela", "Nivel_Esc", "Matricula", 
@@ -473,6 +453,7 @@
             markersLayer.clearLayers();
             bufferLayer.clearLayers();
             colegiosLayer.clearLayers();
+            heatmapLayer.clearLayers(); // Limpiamos calor siempre en el refresco
 
             const pSel = selectProv.value;
             const dSel = selectDist.value;
@@ -541,6 +522,20 @@
                 let lon = feature.geometry?.coordinates[0] || parseFloat(feature.properties.Longitud);
                 if (isNaN(lat) || isNaN(lon)) return;
 
+                const energiaDato = (feature.properties.F_Energia || '').toUpperCase().trim();
+
+                // LÓGICA DE MAPA DE CALOR: Si el colegio no tiene luz y el heatmap está activo
+                if (mostrarHeatmapActivo && energiaDato === 'NO') {
+                    const heatNode = L.circle([lat, lon], {
+                        radius: 6000, // Radio grande para lograr la fusión visual de calor
+                        color: 'transparent',
+                        fillColor: '#ef4444', // Rojo intenso de advertencia
+                        fillOpacity: 0.15,    // Opacidad baja; al juntarse muchos se ve oscuro
+                        interactive: false
+                    });
+                    heatmapLayer.addLayer(heatNode);
+                }
+
                 const nivel = feature.properties.Nivel_Esc || '';
                 const escolarColor = obtenerColorColegio(nivel);
 
@@ -563,6 +558,20 @@
                 const totalGroup = L.featureGroup([...markersLayer.getLayers(), ...colegiosLayer.getLayers()]);
                 map.fitBounds(totalGroup.getBounds(), { padding: [20, 20], maxZoom: 14 });
             }
+        }
+
+        // Interruptor del mapa de calor
+        function toggleHeatmap() {
+            mostrarHeatmapActivo = !mostrarHeatmapActivo;
+            if (mostrarHeatmapActivo) {
+                btnHeat.classList.add('active');
+                btnHeat.textContent = '🔥 Ocultar Calor';
+                if (!map.hasLayer(heatmapLayer)) map.addLayer(heatmapLayer);
+            } else {
+                btnHeat.classList.remove('active');
+                btnHeat.textContent = '🔥 Mapa de Calor (Sin Luz)';
+            }
+            filtrarYRenderizar();
         }
 
         function calcularDistanciaMetros(lat1, lon1, lat2, lon2) {
@@ -728,8 +737,11 @@
             selectCorr.disabled = true;
             
             mostrarBufferActivo = false;
+            mostrarHeatmapActivo = false;
             btnBuffer.classList.remove('active');
+            btnHeat.classList.remove('active');
             btnBuffer.textContent = '⭕ Mostrar Coberturas';
+            btnHeat.textContent = '🔥 Mapa de Calor (Sin Luz)';
             
             if (!map.hasLayer(markersLayer)) map.addLayer(markersLayer);
             if (!map.hasLayer(colegiosLayer)) map.addLayer(colegiosLayer);
@@ -743,7 +755,7 @@
                 { "type": "Feature", "properties": { "Operador": "Más Móvil", "Sitio Tran": "Torre Central San Francisco", "Estructura": "Monopolo", "Altura (m)": 45, "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5193, 8.9823] } }
             ];
             colegiosData = [
-                { "type": "Feature", "properties": { "Escuela": "Escuela Belisario Porras", "Nivel_Esc": "Primaria", "Matricula": "450 alumnos", "S_Internet": "SI", "A_Banda": "20 Mbps", "F_Energia": "SI", "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5150, 8.9840] } }
+                { "type": "Feature", "properties": { "Escuela": "Escuela Belisario Porras", "Nivel_Esc": "Primaria", "Matricula": "450 alumnos", "S_Internet": "SI", "A_Banda": "20 Mbps", "F_Energia": "NO", "PROV_NOMB": "Panamá", "DIST_NOMB": "Panamá", "CORR_NOMB": "San Francisco" }, "geometry": { "type": "Point", "coordinates": [-79.5150, 8.9840] } }
             ]
         }
 
