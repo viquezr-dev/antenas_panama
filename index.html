@@ -106,7 +106,6 @@
             border-color: #86efac;
         }
 
-        /* Estilo para el nuevo botón de mapa de calor */
         .btn-heat {
             background: #ffe4e6;
             color: #9f1239;
@@ -284,7 +283,6 @@
         </div>
 
         <button id="btnBuffer" class="btn-buffer" onclick="toggleBuffer()">⭕ Mostrar Cobertura Dinámica</button>
-        <!-- NUEVO BOTÓN PARA EL MAPA DE CALOR -->
         <button id="btnHeat" class="btn-heat" onclick="toggleHeatmap()">🔥 Mapa de Calor (Sin Luz)</button>
         <button class="btn-export-cobertura" onclick="exportarColegiosSinCoberturaCSV()">📥 Fuera de Cobertura (CSV)</button>
         <button class="btn-export-infra" onclick="exportarTodosLosColegiosFiltradosCSV()">📊 Exportar Todo por Filtro (CSV)</button>
@@ -313,12 +311,12 @@
         let torresFiltradasGlobal = [];
         let colegiosFiltradosGlobal = [];
         let mostrarBufferActivo = false;
-        let mostrarHeatmapActivo = false; // Estado del mapa de calor
+        let mostrarHeatmapActivo = false; 
 
         const markersLayer = L.layerGroup().addTo(map); 
         const bufferLayer = L.layerGroup().addTo(map);  
         const colegiosLayer = L.layerGroup().addTo(map); 
-        const heatmapLayer = L.layerGroup().addTo(map); // Capa nativa para simular calor
+        const heatmapLayer = L.layerGroup().addTo(map); 
 
         const overlayMaps = {
             "📡 Torres de Telecomunicación": markersLayer,
@@ -453,7 +451,7 @@
             markersLayer.clearLayers();
             bufferLayer.clearLayers();
             colegiosLayer.clearLayers();
-            heatmapLayer.clearLayers(); // Limpiamos calor siempre en el refresco
+            heatmapLayer.clearLayers(); 
 
             const pSel = selectProv.value;
             const dSel = selectDist.value;
@@ -485,9 +483,13 @@
                     opacity: 0.9,
                     fillOpacity: 1
                 }).bindPopup(crearPopupTorre(feature.properties));
-                markersLayer.addLayer(marker);
+                
+                // CONTROL CONMUTADOR: Solo agregamos al mapa si el mapa de calor está apagado
+                if (!mostrarHeatmapActivo) {
+                    markersLayer.addLayer(marker);
+                }
 
-                if (mostrarBufferActivo) {
+                if (mostrarBufferActivo && !mostrarHeatmapActivo) {
                     let radioMetros = 5000;
                     if (altura > 0 && altura <= 50) radioMetros = 3000;
                     else if (altura > 50 && altura <= 100) radioMetros = 5000;
@@ -524,13 +526,12 @@
 
                 const energiaDato = (feature.properties.F_Energia || '').toUpperCase().trim();
 
-                // LÓGICA DE MAPA DE CALOR: Si el colegio no tiene luz y el heatmap está activo
                 if (mostrarHeatmapActivo && energiaDato === 'NO') {
                     const heatNode = L.circle([lat, lon], {
-                        radius: 6000, // Radio grande para lograr la fusión visual de calor
+                        radius: 6000, 
                         color: 'transparent',
-                        fillColor: '#ef4444', // Rojo intenso de advertencia
-                        fillOpacity: 0.15,    // Opacidad baja; al juntarse muchos se ve oscuro
+                        fillColor: '#ef4444', 
+                        fillOpacity: 0.16,    
                         interactive: false
                     });
                     heatmapLayer.addLayer(heatNode);
@@ -549,27 +550,44 @@
                 const markerCuadrado = L.marker([lat, lon], { icon: squareIcon })
                     .bindPopup(crearPopupColegio(feature.properties));
 
-                colegiosLayer.addLayer(markerCuadrado);
+                // CONTROL CONMUTADOR: Si el calor está encendido, ocultamos los cuadritos individuales
+                if (!mostrarHeatmapActivo) {
+                    colegiosLayer.addLayer(markerCuadrado);
+                }
             });
 
             document.getElementById('contador').textContent = `${torresFiltradasGlobal.length} torres | ${colegiosFiltradosGlobal.length} escuelas`;
 
             if ((torresFiltradasGlobal.length + colegiosFiltradosGlobal.length) > 0 && (pSel !== 'TODAS' || dSel !== 'TODOS')) {
-                const totalGroup = L.featureGroup([...markersLayer.getLayers(), ...colegiosLayer.getLayers()]);
-                map.fitBounds(totalGroup.getBounds(), { padding: [20, 20], maxZoom: 14 });
+                // Si el heatmap está solo, usamos sus capas para encuadrar la vista de Leaflet
+                const layerReference = mostrarHeatmapActivo ? heatmapLayer : colegiosLayer;
+                if(layerReference.getLayers().length > 0) {
+                    map.fitBounds(layerReference.getBounds(), { padding: [20, 20], maxZoom: 14 });
+                }
             }
         }
 
-        // Interruptor del mapa de calor
+        // LÓGICA DE CONTROL AUTOMÁTICO DE CAPAS
         function toggleHeatmap() {
             mostrarHeatmapActivo = !mostrarHeatmapActivo;
             if (mostrarHeatmapActivo) {
                 btnHeat.classList.add('active');
                 btnHeat.textContent = '🔥 Ocultar Calor';
+                
+                // Forzamos la remoción visual de las capas base operativas
+                if (map.hasLayer(markersLayer)) map.removeLayer(markersLayer);
+                if (map.hasLayer(bufferLayer)) map.removeLayer(bufferLayer);
+                if (map.hasLayer(colegiosLayer)) map.removeLayer(colegiosLayer);
                 if (!map.hasLayer(heatmapLayer)) map.addLayer(heatmapLayer);
             } else {
                 btnHeat.classList.remove('active');
                 btnHeat.textContent = '🔥 Mapa de Calor (Sin Luz)';
+                
+                // Restablecemos el estado inicial devolviendo las capas automáticas
+                if (!map.hasLayer(markersLayer)) map.addLayer(markersLayer);
+                if (!map.hasLayer(colegiosLayer)) map.addLayer(colegiosLayer);
+                if (mostrarBufferActivo && !map.hasLayer(bufferLayer)) map.addLayer(bufferLayer);
+                if (map.hasLayer(heatmapLayer)) map.removeLayer(heatmapLayer);
             }
             filtrarYRenderizar();
         }
@@ -601,7 +619,7 @@
                 
                 if (isNaN(cLat) || isNaN(cLon)) return false;
 
-                const estaCubierto = torresFiltradasGlobal.some(torre => {
+                const estaCubierto = torresData.some(torre => {
                     let tLat = torre.geometry?.coordinates[1] || parseFloat(torre.properties.Lat_Dec);
                     let tLon = torre.geometry?.coordinates[0] || parseFloat(torre.properties.Lon_Dec);
                     if (isNaN(tLat) || isNaN(tLon)) return false;
@@ -697,7 +715,8 @@
             if (mostrarBufferActivo) {
                 btnBuffer.classList.add('active');
                 btnBuffer.textContent = '⭕ Ocultar Coberturas';
-                if (!map.hasLayer(bufferLayer)) map.addLayer(bufferLayer);
+                // Solo lo añadimos al mapa directamente si no está el mapa de calor interfiriendo
+                if (!mostrarHeatmapActivo && !map.hasLayer(bufferLayer)) map.addLayer(bufferLayer);
             } else {
                 btnBuffer.classList.remove('active');
                 btnBuffer.textContent = '⭕ Mostrar Coberturas';
@@ -745,6 +764,8 @@
             
             if (!map.hasLayer(markersLayer)) map.addLayer(markersLayer);
             if (!map.hasLayer(colegiosLayer)) map.addLayer(colegiosLayer);
+            if (map.hasLayer(bufferLayer)) map.removeLayer(bufferLayer);
+            if (map.hasLayer(heatmapLayer)) map.removeLayer(heatmapLayer);
             
             filtrarYRenderizar();
             map.setView([8.537, -80.782], 8);
