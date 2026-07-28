@@ -70,7 +70,7 @@
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 13px;
-            min-width: 150px;
+            min-width: 140px;
             background: #f8fafc;
             color: #334155;
             cursor: pointer;
@@ -275,6 +275,23 @@
             </select>
         </div>
 
+        <!-- NUEVOS SELECTORES PARA APAGAR / ENCENDER CAPAS DE TORRES Y ESCUELAS -->
+        <div class="filter-group">
+            <label for="verTorres">Antenas:</label>
+            <select id="verTorres">
+                <option value="SI">Visibles</option>
+                <option value="NO">Ocultas</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="verEscuelas">Escuelas:</label>
+            <select id="verEscuelas">
+                <option value="SI">Visibles</option>
+                <option value="NO">Ocultas</option>
+            </select>
+        </div>
+
         <button id="btnBuffer" class="btn-buffer" onclick="toggleBuffer()">⭕ Mostrar Cobertura Dinámica</button>
         <button id="btnHeat" class="btn-heat" onclick="toggleHeatmap()">🔥 Mapa de Calor (Sin Luz)</button>
         <button class="btn-export-cobertura" onclick="exportarColegiosSinCoberturaCSV()">📥 Fuera de Cobertura (CSV)</button>
@@ -344,6 +361,8 @@
         const selectDist = document.getElementById('distrito');
         const selectCorr = document.getElementById('corregimiento');
         const selectEnergia = document.getElementById('energia');
+        const selectVerTorres = document.getElementById('verTorres');
+        const selectVerEscuelas = document.getElementById('verEscuelas');
         const btnBuffer = document.getElementById('btnBuffer');
         const btnHeat = document.getElementById('btnHeat');
 
@@ -368,6 +387,8 @@
 
                 inicializarFiltrosCascada();
                 selectEnergia.addEventListener('change', filtrarYRenderizar);
+                selectVerTorres.addEventListener('change', filtrarYRenderizar);
+                selectVerEscuelas.addEventListener('change', filtrarYRenderizar);
                 filtrarYRenderizar();
             } catch (error) {
                 console.error('Error inicializando mapa web:', error);
@@ -446,6 +467,8 @@
             const dSel = selectDist.value;
             const cSel = selectCorr.value;
             const eSel = selectEnergia.value;
+            const verTorresVal = selectVerTorres.value;
+            const verEscuelasVal = selectVerEscuelas.value;
 
             // 1. Filtrar Torres
             torresFiltradasGlobal = torresData.filter(f => {
@@ -474,9 +497,12 @@
                     fillOpacity: 1
                 }).bindPopup(crearPopupTorre(feature.properties));
                 
-                if (!mostrarHeatmapActivo) markersLayer.addLayer(marker);
+                // Solo añadir torre al mapa si el selector está en "SI" y no está activo el heatmap
+                if (!mostrarHeatmapActivo && verTorresVal === 'SI') {
+                    markersLayer.addLayer(marker);
+                }
 
-                if (mostrarBufferActivo && !mostrarHeatmapActivo) {
+                if (mostrarBufferActivo && !mostrarHeatmapActivo && verTorresVal === 'SI') {
                     let radioMetros = 5000;
                     if (altura > 0 && altura <= 50) radioMetros = 3000;
                     else if (altura > 50 && altura <= 100) radioMetros = 5000;
@@ -498,7 +524,7 @@
                 return true;
             });
 
-            // Arreglo para acumular puntos del mapa de calor dinámico profesional
+            // Arreglo para acumular puntos del mapa de calor dinámico
             const puntosCalor = [];
 
             colegiosFiltradosGlobal.forEach(feature => {
@@ -510,7 +536,6 @@
 
                 // Si está el mapa de calor encendido y la escuela no tiene luz, la sumamos a la matriz térmica
                 if (mostrarHeatmapActivo && energiaDato === 'NO') {
-                    // Estructura de Leaflet.heat: [lat, lon, intensidad]
                     puntosCalor.push([lat, lon, 1.0]); 
                 }
 
@@ -524,16 +549,19 @@
                 
                 const markerCuadrado = L.marker([lat, lon], { icon: squareIcon }).bindPopup(crearPopupColegio(feature.properties));
 
-                if (!mostrarHeatmapActivo) colegiosLayer.addLayer(markerCuadrado);
+                // Solo añadir colegio al mapa si el selector está en "SI" y no está activo el heatmap
+                if (!mostrarHeatmapActivo && verEscuelasVal === 'SI') {
+                    colegiosLayer.addLayer(markerCuadrado);
+                }
             });
 
-            // 🔥 CONFIGURACIÓN DE RENDERS TÉRMICOS PARA NAVEGADORES WEB
+            // CONFIGURACIÓN DE RENDERS TÉRMICOS PARA NAVEGADORES WEB
             if (mostrarHeatmapActivo && puntosCalor.length > 0) {
                 heatLayerInstance = L.heatLayer(puntosCalor, {
-                    radius: 25,          // Radio de difuminado óptimo para pantallas de escritorio
-                    blur: 20,            // Suavizado del espectro de calor
-                    maxZoom: 13,         // Zoom donde la intensidad se estabiliza al 100%
-                    gradient: {          // Espectro de color profesional
+                    radius: 25,          
+                    blur: 20,            
+                    maxZoom: 13,         
+                    gradient: {          
                         0.2: 'blue', 
                         0.4: 'cyan', 
                         0.6: 'lime', 
@@ -547,7 +575,7 @@
 
             // Encuadre inteligente automático
             if ((torresFiltradasGlobal.length + colegiosFiltradosGlobal.length) > 0 && (pSel !== 'TODAS' || dSel !== 'TODOS')) {
-                if(!mostrarHeatmapActivo && colegiosLayer.getLayers().length > 0) {
+                if(!mostrarHeatmapActivo && colegiosLayer.getLayers().length > 0 && verEscuelasVal === 'SI') {
                     map.fitBounds(colegiosLayer.getBounds(), { padding: [40, 40] });
                 }
             }
@@ -683,6 +711,8 @@
             selectDist.innerHTML = '<option value="TODOS">Todos</option>';
             selectCorr.innerHTML = '<option value="TODOS">Todos</option>';
             selectEnergia.value = 'TODOS';
+            selectVerTorres.value = 'SI';
+            selectVerEscuelas.value = 'SI';
             selectDist.disabled = true;
             selectCorr.disabled = true;
             mostrarBufferActivo = false;
