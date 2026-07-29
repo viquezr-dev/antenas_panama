@@ -7,7 +7,6 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
     <script src="https://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
     
     <style>
@@ -23,54 +22,58 @@
             color: #334155;
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
         }
         
+        /* HEADER REDUCIDO Y COMPACTO */
         .header {
-            background: #475569;
+            background: #334155;
             color: #f8fafc;
-            padding: 14px 20px;
+            padding: 6px 16px;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-bottom: 1px solid #1e293b;
         }
         
         .header h1 {
-            font-size: 22px;
-            font-weight: 500;
-            letter-spacing: 0.5px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
         
+        /* BARRA DE CONTROLES COMPACTA */
         .controls {
             background: white;
-            padding: 14px;
+            padding: 8px 12px;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 8px 10px;
             border-bottom: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            z-index: 1000;
         }
         
         .filter-group {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 5px;
         }
 
         .controls label {
             font-weight: 600;
             color: #475569;
-            font-size: 13px;
+            font-size: 12px;
             white-space: nowrap;
         }
         
         .controls select {
-            padding: 6px 12px;
+            padding: 4px 8px;
             border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 13px;
-            min-width: 140px;
+            border-radius: 4px;
+            font-size: 12px;
+            height: 28px;
             background: #f8fafc;
             color: #334155;
             cursor: pointer;
@@ -81,20 +84,21 @@
             outline: none;
             border-color: #3b82f6;
             background: white;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
         }
         
         .controls button {
-            padding: 8px 16px;
+            padding: 0 10px;
+            height: 28px;
             border: none;
-            border-radius: 6px;
-            font-size: 13px;
+            border-radius: 4px;
+            font-size: 12px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            white-space: nowrap;
         }
         
         .controls button:hover {
@@ -103,9 +107,9 @@
         }
         
         .btn-buffer {
-            background: #cbd5e1;
+            background: #e2e8f0;
             color: #334155;
-            border: 1px solid #94a3b8;
+            border: 1px solid #cbd5e1;
         }
         
         .btn-buffer.active {
@@ -124,7 +128,7 @@
             background: #f43f5e;
             color: white;
             border-color: #e11d48;
-            box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
+            box-shadow: 0 0 6px rgba(244, 63, 94, 0.4);
         }
 
         .btn-export-cobertura {
@@ -142,16 +146,20 @@
         .btn-reset {
             background: #fee2e2;
             color: #991b1b;
+            border: 1px solid #fca5a5;
         }
         
         .stats {
             background: #f1f5f9;
-            padding: 8px 14px;
-            border-radius: 6px;
-            font-size: 13px;
+            padding: 0 10px;
+            height: 28px;
+            line-height: 28px;
+            border-radius: 4px;
+            font-size: 11px;
             color: #334155;
             font-weight: 600;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #cbd5e1;
+            white-space: nowrap;
         }
         
         #map {
@@ -161,45 +169,45 @@
         }
         
         .footer {
-            background: #475569;
+            background: #334155;
             color: #cbd5e1;
             text-align: center;
-            padding: 8px;
-            font-size: 12px;
+            padding: 4px;
+            font-size: 11px;
             width: 100%;
-            border-top: 1px solid #334155;
+            border-top: 1px solid #1e293b;
         }
         
         .info-popup {
-            font-size: 13px;
-            line-height: 1.5;
+            font-size: 12px;
+            line-height: 1.4;
             color: #334155;
-            min-width: 200px;
+            min-width: 180px;
         }
         
         .info-popup h3 {
             color: #1e293b;
-            font-size: 14px;
-            margin-bottom: 6px;
+            font-size: 13px;
+            margin-bottom: 4px;
             border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 4px;
+            padding-bottom: 2px;
         }
 
         .legend {
             background: white;
-            padding: 12px;
-            line-height: 18px;
+            padding: 10px;
+            line-height: 16px;
             color: #334155;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-            font-size: 12px;
-            max-width: 240px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            font-size: 11px;
+            max-width: 220px;
         }
         
         .legend h4 {
-            margin: 6px 0 4px 0;
+            margin: 4px 0 2px 0;
             color: #475569;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 2px;
@@ -209,14 +217,14 @@
         .legend p {
             display: flex;
             align-items: center;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .legend i {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             float: left;
-            margin-right: 8px;
+            margin-right: 6px;
             opacity: 0.9;
             border: 1px solid #475569;
         }
@@ -224,19 +232,18 @@
         .legend i.circulo { border-radius: 50%; }
         .legend i.cuadrado { border-radius: 0%; }
         
-        /* Barra de espectro para la escala térmica web */
         .thermal-bar {
             width: 100%;
-            height: 10px;
+            height: 8px;
             background: linear-gradient(to right, blue, cyan, lime, yellow, red);
-            border-radius: 3px;
-            margin-bottom: 4px;
+            border-radius: 2px;
+            margin-bottom: 2px;
             border: 1px solid #cbd5e1;
         }
         .thermal-labels {
             display: flex;
             justify-content: space-between;
-            font-size: 10px;
+            font-size: 9px;
             color: #64748b;
             font-weight: 600;
         }
@@ -245,7 +252,7 @@
 <body>
 
     <div class="header">
-        <h1>📡 Infraestructura y Centros Educativos de Panamá </h1>
+        <h1>📡 Infraestructura y Centros Educativos de Panamá</h1>
     </div>
     
     <div class="controls">
@@ -267,7 +274,7 @@
         </div>
 
         <div class="filter-group">
-            <label for="energia">Energía Eléctrica:</label>
+            <label for="energia">Energía:</label>
             <select id="energia">
                 <option value="TODOS">Todos</option>
                 <option value="SI">Con Electricidad (SI)</option>
@@ -275,7 +282,6 @@
             </select>
         </div>
 
-        <!-- NUEVOS SELECTORES PARA APAGAR / ENCENDER CAPAS DE TORRES Y ESCUELAS -->
         <div class="filter-group">
             <label for="verTorres">Antenas:</label>
             <select id="verTorres">
@@ -292,11 +298,11 @@
             </select>
         </div>
 
-        <button id="btnBuffer" class="btn-buffer" onclick="toggleBuffer()">⭕ Mostrar Cobertura Dinámica</button>
-        <button id="btnHeat" class="btn-heat" onclick="toggleHeatmap()">🔥 Mapa de Calor (Sin Luz)</button>
-        <button class="btn-export-cobertura" onclick="exportarColegiosSinCoberturaCSV()">📥 Fuera de Cobertura (CSV)</button>
-        <button class="btn-export-infra" onclick="exportarTodosLosColegiosFiltradosCSV()">📊 Exportar Todo por Filtro (CSV)</button>
-        <button class="btn-reset" onclick="resetMap()">🔄 Resetear Filtros</button>
+        <button id="btnBuffer" class="btn-buffer" onclick="toggleBuffer()">⭕ Coberturas</button>
+        <button id="btnHeat" class="btn-heat" onclick="toggleHeatmap()">🔥 Calor (Sin Luz)</button>
+        <button class="btn-export-cobertura" onclick="exportarColegiosSinCoberturaCSV()">📥 Fuera Cobertura (CSV)</button>
+        <button class="btn-export-infra" onclick="exportarTodosLosColegiosFiltradosCSV()">📊 Exportar Todo (CSV)</button>
+        <button class="btn-reset" onclick="resetMap()">🔄 Resetear</button>
     </div>
     
     <div id="map"></div>
@@ -328,7 +334,6 @@
         const bufferLayer = L.layerGroup().addTo(map);  
         const colegiosLayer = L.layerGroup().addTo(map); 
         
-        // Instancia global de la capa de calor avanzada Leaflet.heat
         let heatLayerInstance = null;
 
         const legend = L.control({ position: 'bottomright' });
@@ -345,7 +350,7 @@
                 <p><i class="cuadrado" style="background: #60a5fa"></i> Premedia/Media</p>
                 <p><i class="cuadrado" style="background: #f472b6"></i> Telebásica</p>
                 
-                <h4>Densidad de Escuelas Sin Luz</h4>
+                <h4>Densidad Escuelas Sin Luz</h4>
                 <div class="thermal-bar"></div>
                 <div class="thermal-labels">
                     <span>Baja</span>
@@ -457,7 +462,6 @@
             bufferLayer.clearLayers();
             colegiosLayer.clearLayers();
             
-            // Si la capa térmica web existe en el mapa, la removemos temporalmente para recalcular
             if (heatLayerInstance) {
                 map.removeLayer(heatLayerInstance);
                 heatLayerInstance = null;
@@ -470,7 +474,6 @@
             const verTorresVal = selectVerTorres.value;
             const verEscuelasVal = selectVerEscuelas.value;
 
-            // 1. Filtrar Torres
             torresFiltradasGlobal = torresData.filter(f => {
                 if (pSel !== 'TODAS' && f.properties.PROV_NOMB !== pSel) return false;
                 if (dSel !== 'TODOS' && f.properties.DIST_NOMB !== dSel) return false;
@@ -489,7 +492,7 @@
                 if (altura > 100) iconColor = '#fca5a5';
 
                 const marker = L.circleMarker([lat, lon], {
-                    radius: 6,
+                    radius: 5,
                     fillColor: iconColor,
                     color: '#475569',
                     weight: 1.2,
@@ -497,7 +500,6 @@
                     fillOpacity: 1
                 }).bindPopup(crearPopupTorre(feature.properties));
                 
-                // Solo añadir torre al mapa si el selector está en "SI" y no está activo el heatmap
                 if (!mostrarHeatmapActivo && verTorresVal === 'SI') {
                     markersLayer.addLayer(marker);
                 }
@@ -515,7 +517,6 @@
                 }
             });
 
-            // 2. Filtrar Colegios
             colegiosFiltradosGlobal = colegiosData.filter(f => {
                 if (pSel !== 'TODAS' && f.properties.PROV_NOMB !== pSel) return false;
                 if (dSel !== 'TODOS' && f.properties.DIST_NOMB !== dSel) return false;
@@ -524,7 +525,6 @@
                 return true;
             });
 
-            // Arreglo para acumular puntos del mapa de calor dinámico
             const puntosCalor = [];
 
             colegiosFiltradosGlobal.forEach(feature => {
@@ -534,7 +534,6 @@
 
                 const energiaDato = (feature.properties.F_Energia || '').toUpperCase().trim();
 
-                // Si está el mapa de calor encendido y la escuela no tiene luz, la sumamos a la matriz térmica
                 if (mostrarHeatmapActivo && energiaDato === 'NO') {
                     puntosCalor.push([lat, lon, 1.0]); 
                 }
@@ -543,23 +542,21 @@
                 const escolarColor = obtenerColorColegio(nivel);
                 const squareIcon = L.divIcon({
                     className: 'custom-square-icon',
-                    html: `<div style="width:10px; height:10px; background-color:${escolarColor}; border:1px solid #1e293b; opacity:0.95;"></div>`,
-                    iconSize: [10, 10], iconAnchor: [5, 5]
+                    html: `<div style="width:8px; height:8px; background-color:${escolarColor}; border:1px solid #1e293b; opacity:0.95;"></div>`,
+                    iconSize: [8, 8], iconAnchor: [4, 4]
                 });
                 
                 const markerCuadrado = L.marker([lat, lon], { icon: squareIcon }).bindPopup(crearPopupColegio(feature.properties));
 
-                // Solo añadir colegio al mapa si el selector está en "SI" y no está activo el heatmap
                 if (!mostrarHeatmapActivo && verEscuelasVal === 'SI') {
                     colegiosLayer.addLayer(markerCuadrado);
                 }
             });
 
-            // CONFIGURACIÓN DE RENDERS TÉRMICOS PARA NAVEGADORES WEB
             if (mostrarHeatmapActivo && puntosCalor.length > 0) {
                 heatLayerInstance = L.heatLayer(puntosCalor, {
-                    radius: 25,          
-                    blur: 20,            
+                    radius: 25,         
+                    blur: 20,           
                     maxZoom: 13,         
                     gradient: {          
                         0.2: 'blue', 
@@ -573,15 +570,13 @@
 
             document.getElementById('contador').textContent = `${torresFiltradasGlobal.length} torres | ${colegiosFiltradosGlobal.length} escuelas`;
 
-            // Encuadre inteligente automático
             if ((torresFiltradasGlobal.length + colegiosFiltradosGlobal.length) > 0 && (pSel !== 'TODAS' || dSel !== 'TODOS')) {
                 if(!mostrarHeatmapActivo && colegiosLayer.getLayers().length > 0 && verEscuelasVal === 'SI') {
-                    map.fitBounds(colegiosLayer.getBounds(), { padding: [40, 40] });
+                    map.fitBounds(colegiosLayer.getBounds(), { padding: [30, 30] });
                 }
             }
         }
 
-        // LÓGICA DE CONMUTACIÓN DE CAPAS AVANZADA
         function toggleHeatmap() {
             mostrarHeatmapActivo = !mostrarHeatmapActivo;
             if (mostrarHeatmapActivo) {
@@ -593,7 +588,7 @@
                 if (map.hasLayer(colegiosLayer)) map.removeLayer(colegiosLayer);
             } else {
                 btnHeat.classList.remove('active');
-                btnHeat.textContent = '🔥 Mapa de Calor (Sin Luz)';
+                btnHeat.textContent = '🔥 Calor (Sin Luz)';
                 
                 if (!map.hasLayer(markersLayer)) map.addLayer(markersLayer);
                 if (!map.hasLayer(colegiosLayer)) map.addLayer(colegiosLayer);
@@ -610,7 +605,7 @@
                 if (!mostrarHeatmapActivo && !map.hasLayer(bufferLayer)) map.addLayer(bufferLayer);
             } else {
                 btnBuffer.classList.remove('active');
-                btnBuffer.textContent = '⭕ Mostrar Coberturas';
+                btnBuffer.textContent = '⭕ Coberturas';
                 if (map.hasLayer(bufferLayer)) map.removeLayer(bufferLayer);
             }
             filtrarYRenderizar();
@@ -719,8 +714,8 @@
             mostrarHeatmapActivo = false;
             btnBuffer.classList.remove('active');
             btnHeat.classList.remove('active');
-            btnBuffer.textContent = '⭕ Mostrar Coberturas';
-            btnHeat.textContent = '🔥 Mapa de Calor (Sin Luz)';
+            btnBuffer.textContent = '⭕ Coberturas';
+            btnHeat.textContent = '🔥 Calor (Sin Luz)';
             
             if (!map.hasLayer(markersLayer)) map.addLayer(markersLayer);
             if (!map.hasLayer(colegiosLayer)) map.addLayer(colegiosLayer);
