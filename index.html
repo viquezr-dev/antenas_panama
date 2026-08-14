@@ -247,6 +247,9 @@
             color: #64748b;
             font-weight: 600;
         }
+        .custom-square-icon {
+            cursor: pointer !important;
+        }
     </style>
 </head>
 <body>
@@ -542,8 +545,9 @@
                 const escolarColor = obtenerColorColegio(nivel);
                 const squareIcon = L.divIcon({
                     className: 'custom-square-icon',
-                    html: `<div style="width:8px; height:8px; background-color:${escolarColor}; border:1px solid #1e293b; opacity:0.95;"></div>`,
-                    iconSize: [8, 8], iconAnchor: [4, 4]
+                    html: `<div style="width:8px; height:8px; background-color:${escolarColor}; border:1px solid #1e293b; opacity:0.95; cursor:pointer;"></div>`,
+                    iconSize: [8, 8], 
+                    iconAnchor: [4, 4]
                 });
                 
                 const markerCuadrado = L.marker([lat, lon], { icon: squareIcon }).bindPopup(crearPopupColegio(feature.properties));
